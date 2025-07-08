@@ -51,7 +51,7 @@ END;
 
 [
   Diets
-  0: Br
-  1: Gr
-  2: MF
+  0: Browsers
+  1: Grazers
+  2: Mixed feeders
 ]

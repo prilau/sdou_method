@@ -139,7 +139,7 @@ mymcmc = mcmc(mymodel, monitors, moves, nruns=4, combine="mixed")
 
 
 ### run the MCMC ###
-mymcmc.burnin(generations=5000, tuningInterval=100) # comment out after first run
+mymcmc.burnin(generations=5000, tuningInterval=200) # comment out after first run
 
 #mymcmc.initializeFromCheckpoint("output/joint_SDOU/long_checkpoint.state") #comment this out for the first run
 mymcmc.run(generations=200000, tuningInterval=200, checkpointInterval=10, checkpointFile="output/joint_SDOU/long_checkpoint.state")

@@ -1,57 +1,60 @@
 #NEXUS
+[Data written by write.nexus.data.R, Fri Jul  4 10:57:40 2025]
 BEGIN DATA;
   DIMENSIONS NTAX=43 NCHAR=1;
   FORMAT DATATYPE=STANDARD MISSING=? GAP=- INTERLEAVE=NO symbols="012";
   MATRIX
-    Antilocapra_americana                           2
-    Addax_nasomaculatus                             2
-    Aepyceros_melampus                              2
-    Alcelaphus_buselaphus_buselaphus                1
-    Antidorcas_marsupialis                          2
-    Antilope_cervicapra                             2
-    Cephalophus_natalensis                          0
-    Cephalophus_nigrifrons                          0
-    Madoqua_kirkii                                  0
-    Connochaetes_gnou                               1
-    Connochaetes_taurinus                           1
-    Eudorcas_rufifrons                              2
-    Gazella_dorcas_pelzelnii                        2
-    Hippotragus_equinus                             1
-    Hippotragus_niger                               1
-    Kobus_ellipsiprymnus                            2
-    Kobus_leche                                     2
-    Litocranius_walleri                             0
-    Nanger_dama                                     2
-    Nanger_granti                                   2
-    Nesotragus_moschatus                            0
-    Oreotragus_oreotragus                           2
-    Oryx_dammah                                     2
-    Oryx_gazella                                    2
-    Ourebia_ourebi                                  2
-    Philantomba_monticola                           0
-    Rahicerus_campestris                            2
-    Redunca_arundinum                               1
-    Redunca_fulvorufula                             1
-    Rupicapra_rupicapra                             2
-    Saiga_tatarica                                  2
-    Sylvicapra_grimmia                              0
-    Syncerus_caffer                                 1
-    Tragelaphus_oryx                                2
-    Tragelaphus_angasii                             0
-    Tragelaphus_eurycerus                           2
-    Tragelaphus_imberbis                            2
-    Tragelaphus_scriptus                            0
-    Tragelaphus_spekii                              2
-    Tragelaphus_strepsiceros                        0
-    Capreolus_capreolus                             0
-    Giraffa_camelopardalis_angolensis               0
-    Okapia_johnstoni                                0
+    Addax_nasomaculatus                    1
+    Aepyceros_melampus                     1
+    Alcelaphus_buselaphus_buselaphus       2
+    Antidorcas_marsupialis                 1
+    Antilocapra_americana                  1
+    Antilope_cervicapra                    1
+    Capreolus_capreolus                    0
+    Cephalophus_natalensis                 0
+    Cephalophus_nigrifrons                 0
+    Connochaetes_gnou                      2
+    Connochaetes_taurinus                  2
+    Eudorcas_rufifrons                     1
+    Gazella_dorcas_pelzelnii               1
+    Giraffa_camelopardalis_angolensis      0
+    Hippotragus_equinus                    2
+    Hippotragus_niger                      2
+    Kobus_ellipsiprymnus                   1
+    Kobus_leche                            1
+    Litocranius_walleri                    0
+    Madoqua_kirkii                         0
+    Nanger_dama                            1
+    Nanger_granti                          1
+    Nesotragus_moschatus                   0
+    Okapia_johnstoni                       0
+    Oreotragus_oreotragus                  1
+    Oryx_dammah                            1
+    Oryx_gazella                           1
+    Ourebia_ourebi                         1
+    Philantomba_monticola                  0
+    Raphicerus_campestris                  1
+    Redunca_arundinum                      2
+    Redunca_fulvorufula                    2
+    Rupicapra_rupicapra                    1
+    Saiga_tatarica                         1
+    Sylvicapra_grimmia                     0
+    Syncerus_caffer                        2
+    Tragelaphus_angasii                    0
+    Tragelaphus_eurycerus                  1
+    Tragelaphus_imberbis                   1
+    Tragelaphus_oryx                       1
+    Tragelaphus_scriptus                   0
+    Tragelaphus_spekii                     1
+    Tragelaphus_strepsiceros               0
   ;
 END;
 
 [
-  Diets
   0: Browsers
-  1: Grazers
-  2: Mixed feeders
+  1: Mixed feeders
+  2: Grazers
+  
+  source: R package slouch; data("neocortex"); diet
 ]
+

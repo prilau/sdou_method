@@ -6,31 +6,7 @@ library(latex2exp)
 library(phytools)
 library(RevGadgets)
 library(tidyverse)
-source("scripts/functions.R")
-
-
-# plot ancestral state map of stochastic mapping and data augmentation respectively
-#tb_node <- read.table("output/ase/charhist.log", header = TRUE)
-#sm_node <- read.simmap(text=tb_node$simmap, format="phylip")
-#obj_node<-summary(sm_node)
-#plot(obj_node)
-#
-#tb_node2 <- read.table("output/data_augmentation/charhist.log", header = TRUE)
-#sm_node2 <- read.simmap(text=tb_node2$char_hist, format="phylip")
-#obj_node2<-summary(sm_node2)
-#plot(obj_node2)
-#
-#tb_node3 <- read.table("output/joint_SDOU/augch.trees", header = TRUE)
-#sm_node3 <- read.simmap(text=tb_node3$char_hist, format="phylip")
-#obj_node3<-summary(sm_node3)
-#plot(obj_node3)
-
-
-#plot(sm_node3[[1]], color=c("0"="#44aa99", "1"="#ddcc77", "2"="#882255"))
-#
-#tree <- read.tree("data/artiodactyla.tree")
-#
-#max(node.depth.edgelength(tree))
+source("../utility/functions.R")
 
 
 
@@ -55,7 +31,6 @@ colors_sdou <- c("#CC6677", "#44AA99", "#DDCC77")
 
 # alpha
 names(colors_sdou) <- c("alpha[1]", "alpha[2]", "alpha[3]")
-bounds <- ci(x, ci = 0.95, method = "HDI", verbose = FALSE) %>% unlist()
 plot_alpha <- traces %>% 
   pivot_longer(cols=c("alpha[1]", "alpha[2]", "alpha[3]"),
                names_to = "parameter", values_to = "value") %>% 
@@ -167,7 +142,8 @@ p1 <- plotAncStatesPie(t = ase_MAP,
                        node_pie_size = 2,
                        tip_pie_size = 2,
                        tree_layout = "rectangular",
-                       state_transparency = 0.9) +
+                       state_transparency = 0.9,
+                       tree_linewidth = 0.75) +
   theme(legend.position = "none")
 
 tb_MAP <- read.table("output/ase/charhist.log", header = TRUE)
@@ -200,7 +176,8 @@ p3 <- plotAncStatesPie(t = ase_da,
                        node_pie_size = 2,
                        tip_pie_size = 2,
                        tree_layout = "rectangular",
-                       state_transparency = 0.9) +
+                       state_transparency = 0.9,
+                       tree_linewidth = 0.75) +
   theme(legend.position = "none")
 
 tb_da <- read.table("output/data_augmentation/charhist.log", header = TRUE)
@@ -233,7 +210,8 @@ p5 <- plotAncStatesPie(t = ase_joint,
                        node_pie_size = 2,
                        tip_pie_size = 2,
                        tree_layout = "rectangular",
-                       state_transparency = 0.9) +
+                       state_transparency = 0.9,
+                       tree_linewidth = 0.75) +
   theme(legend.position = "none")
 
 tb_joint <- read.table("output/joint_SDOU/charhist.log", header = TRUE)
@@ -329,18 +307,6 @@ plot_maps_all <- cowplot::plot_grid(plot_left, plot_mid, plot_right, plot_rightm
 
 ggsave("figures/case_study_maps.pdf", plot_maps_all, width=7.5, height=6, units="in")
 
-
-#p0 <- ggplot() + theme_void()
-#row1 <- cowplot::plot_grid(p3, p0,
-#                                rel_widths = c(2.225,1),
-#                                #labels = c("Joint", "Data augmentation", "Stochastic mapping"),
-#                                #label_size = 10,
-#                                ncol=2)
-#cowplot::plot_grid(row1, p5,
-#                   #labels = c("Joint", "Data augmentation", "Stochastic mapping"),
-#                   #label_size = 10,
-#                   ncol=1)
-
 ########
 # long #
 ########
@@ -420,6 +386,106 @@ plot_maps_long <- cowplot::plot_grid(p_ase_long[[1]], p_ase_long[[2]], p_ase_lon
                                 ncol=4)
 
 ggsave("figures/case_study_maps_long.pdf", plot_maps_long, width=7.5, height=7.5, units="in")
+
+
+
+################################
+# large and small fixed alphas #
+################################
+ase_largeAlpha <-
+    processAncStates(paste0("output/joint_SDOU/largeAlpha_anc_states_marginal.log"),
+                     state_labels=c("0"="Browsers",
+                                    "1"="Mixed feeders",
+                                    "2"="Grazers"))
+tb_largeAlpha <- read.table(paste0("output/joint_SDOU/largeAlpha_charhist.log"), header = TRUE)
+simmap_largeAlpha <- read.simmap(text=tb_largeAlpha$char_hist, format = "phylip")
+processed_largeAlpha <- processStochMaps(tree=tree, simmap = simmap_largeAlpha,
+                                        states = c("0", "1", "2"))
+colnames(processed_largeAlpha)[6] = "Browsers"
+colnames(processed_largeAlpha)[7] = "Mixed feeders"
+colnames(processed_largeAlpha)[8] = "Grazers"
+
+p7 <- plotAncStatesPie(t = ase_largeAlpha ,
+                       pie_colors = c("Browsers"="#CC6677", "Mixed feeders"="#44AA99", "Grazers"="#ddcc77"),
+                       tip_labels = FALSE,
+                       tip_pies = TRUE,
+                       node_pie_size = 2,
+                       tip_pie_size = 2,
+                       tree_layout = "rectangular",
+                       state_transparency = 0.9,
+                       tree_linewidth = 0.75) +
+  theme(legend.position = "none")
+p8 <- plotStochMaps(tree=tree, maps = processed_largeAlpha, color_by = "MAP",
+                    colors = c("Browsers"="#CC6677",
+                               "Mixed feeders"="#44aa99",
+                               "Grazers"="#ddcc77"
+                               ),
+                    tip_labels = FALSE
+) +
+  theme(legend.position = "none")
+
+
+ase_smallAlpha <-
+  processAncStates(paste0("output/joint_SDOU/smallAlpha_anc_states_marginal.log"),
+                   state_labels=c("0"="Browsers",
+                                  "1"="Mixed feeders",
+                                  "2"="Grazers"))
+tb_smallAlpha <- read.table(paste0("output/joint_SDOU/smallAlpha_charhist.log"), header = TRUE)
+simmap_smallAlpha <- read.simmap(text=tb_smallAlpha$char_hist, format = "phylip")
+processed_smallAlpha <- processStochMaps(tree=tree, simmap = simmap_smallAlpha,
+                                         states = c("0", "1", "2"))
+colnames(processed_smallAlpha)[6] = "Browsers"
+colnames(processed_smallAlpha)[7] = "Mixed feeders"
+colnames(processed_smallAlpha)[8] = "Grazers"
+
+p9 <- plotAncStatesPie(t = ase_smallAlpha ,
+                       pie_colors = c("Browsers"="#CC6677", "Mixed feeders"="#44AA99", "Grazers"="#ddcc77"),
+                       tip_labels = FALSE,
+                       tip_pies = TRUE,
+                       node_pie_size = 2,
+                       tip_pie_size = 2,
+                       tree_layout = "rectangular",
+                       state_transparency = 0.9,
+                       tree_linewidth = 0.75) +
+  theme(legend.position = "none")
+p10 <- plotStochMaps(tree=tree, maps = processed_smallAlpha, color_by = "MAP",
+                    colors = c("Browsers"="#CC6677",
+                               "Mixed feeders"="#44aa99",
+                               "Grazers"="#ddcc77"
+                    ),
+                    tip_labels = FALSE
+) +
+  theme(legend.position = "none")
+
+
+plot_row1 <- plot_grid(p0g, p0w2, p0g,
+                       rel_widths=c(0.95,0.1,2.95), ncol=3) +
+  draw_plot_label(label=c("Stochastic mapping",
+                          "State-dependent OU model"),
+                  x=c(1/8, 5/8),
+                  y=0.5,
+                  hjust=.5, vjust=.5, size=12)
+plot_row2 <- plot_grid(p0w, p0w2, p0w, p0w, p0w,
+                       rel_widths=c(0.95,0.1,2.95/3,2.95/3,2.95/3), ncol=5) +
+  draw_plot_label(label=c("No continuous character", "",
+                          "Fixed, large alpha",
+                          "Fixed, small alpha",
+                          "Estimated alpha"),
+                  x=c(0.95/2/3.9, 0,
+                      (0.95+0.1+2.95/3/2)/4,
+                      (0.95+0.1+1.5*2.95/3)/4,
+                      (0.95+0.1+2.5*2.95/3)/4),
+                  y=0.5,
+                  hjust=.5, vjust=.5, size=8)
+
+plot_row34 <- plot_grid(p1, p0w2, p7, p9, p5, p2, p0w2, p8, p10, p6,
+                       rel_widths=c(0.95,0.1,0.95,0.95,0.95), ncol=5)
+plot_alphas <- plot_grid(plot_row1, plot_row2, plot_row34,
+                         rel_heights = c(1,1,12), ncol=1)
+
+
+
+ggsave("figures/case_study_maps_alphas.pdf", plot_alphas, width=7.5, height=6, units="in")
 
 
 

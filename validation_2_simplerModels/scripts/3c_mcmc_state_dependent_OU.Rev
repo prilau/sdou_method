@@ -17,7 +17,7 @@ characterCont <- 1
 characterDisc <- 1
 
 ### Read in the tree
-tree <- readTrees("data/artiodactyla.tree")[1]
+tree <- readTrees("data/artiodactyla_rescaled.tree")[1]
 ntips <- tree.ntips()
 nbranches <- 2 * ntips - 2
 root_age <- tree.rootAge()

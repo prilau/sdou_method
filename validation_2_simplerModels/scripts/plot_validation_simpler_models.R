@@ -1,55 +1,32 @@
 library(ape)
 library(cowplot)
-library(ggridges)
-library(RevGadgets)
-library(grid)
 library(ggplot2)
-library(tidyverse)
-library(latex2exp)
+library(ggridges)
 library(khroma)
-source("scripts/functions.R")
-
-# modify so that tree height = 1 first
-library(slouch)
-data("artiodactyla")
-root_age <- max(node.depth.edgelength(artiodactyla))
+library(latex2exp)
+library(RevGadgets)
+library(tidyverse)
+source("../utility/functions.R")
 
 trace_1a <- readTrace(path = "output/1a_state_independent_BM.log", burnin = 0.0)
-trace_1a[[1]] <- trace_1a[[1]] %>% mutate(sigma2 = sigma2 * root_age)
 trace_1b <- readTrace(path = "output/1b_state_dependent_OU.log", burnin = 0.0)
-trace_1b[[1]] <- trace_1b[[1]] %>% mutate(`sigma2[1]` = `sigma2[1]` * root_age,
-                                          `sigma2[2]` = `sigma2[2]` * root_age,
-                                          `sigma2[3]` = `sigma2[3]` * root_age)
 trace_1c <- readTrace(path = "output/1c_state_dependent_BM.log", burnin = 0.0)
-trace_1c[[1]] <- trace_1c[[1]] %>% mutate(`sigma2[1]` = `sigma2[1]` * root_age,
-                                          `sigma2[2]` = `sigma2[2]` * root_age,
-                                          `sigma2[3]` = `sigma2[3]` * root_age)
 trace_1d <- readTrace(path = "output/1d_state_independent_OU.log", burnin = 0.0)
-trace_1d[[1]] <- trace_1d[[1]] %>% mutate(sigma2 = sigma2 * root_age)
-
-
 trace_2a <- readTrace(path = "output/2a_state_independent_OU.log", burnin = 0.0)
-trace_2a[[1]] <- trace_2a[[1]] %>% mutate(sigma2 = sigma2 * root_age,
-                                          alpha = alpha * root_age)
-
 trace_2b <- readTrace(path = "output/2b_state_dependent_OU.log", burnin = 0.0)
-trace_2b[[1]] <- trace_2b[[1]] %>% mutate(`sigma2[1]` = `sigma2[1]` * root_age,
-                                          `sigma2[2]` = `sigma2[2]` * root_age,
-                                          `sigma2[3]` = `sigma2[3]` * root_age,
-                                          `alpha[1]` = `alpha[1]` * root_age,
-                                          `alpha[2]` = `alpha[2]` * root_age,
-                                          `alpha[3]` = `alpha[3]` * root_age)
-
 trace_3a <- readTrace(path = "output/3a_state_dependent_BM.log", burnin = 0.0)
 trace_3b <- readTrace(path = "output/3b_MuSSCRat.log", burnin = 0.0)
 trace_3c <- readTrace(path = "output/3c_state_dependent_OU.log", burnin = 0.0)
 
-
 colors_traces <- as.character(c(color("high contrast")(3)[-1], color("medium contrast")(6),
                                 color("muted")(9)[c(5,6,8)]))
-
 colors_traces <- colors_traces[c(11,10,1,3,6,2,4,7,5,9,8)]
 
+
+
+#######################
+# Comparison to SI-BM #
+#######################
 traces_1 <- list(tibble(.rows = 20002))
 traces_1[[1]]$sigma2_1a <- trace_1a[[1]]$sigma2
 traces_1[[1]]$sigma2_1b <- trace_1b[[1]]$`sigma2[1]`
@@ -82,23 +59,17 @@ p1 <- traces_1_long %>%
   scale_color_manual(values = colors_traces_1) +   
   scale_fill_manual(values = colors_traces_1) + 
   theme_classic() +
-  #scale_y_discrete(labels=c("OU" = "SD-OU", "MuSSCRat_1" = "MuSSCRat",
-  #                          "SD-BM_0" = "SD-BM", "SD-BM_1"="SD-BM",
-  #                          "SD-OU_0"="SD-OU", "SD-OU_1"="SD-OU")) +
   ylab("Posterior density") +
   xlab(TeX("Diffusion variance $\\sigma^2$")) +
-  coord_cartesian(xlim=c(0.3, 3.5))
-#theme(axis.ticks.x = element_blank(),
-#      axis.text.x = element_blank()
-#      ) +
+  coord_cartesian(xlim=c(0.3, 2))
 p1
 
   
 
 
-######
-# ou #
-######
+#######################
+# Comparison to SI-OU #
+#######################
 
 traces_2 <- list(tibble(.rows = 20002))
 traces_2[[1]]$sigma2_2a <- trace_2a[[1]]$sigma2
@@ -125,7 +96,6 @@ p2_alpha <- traces_2_long %>%
   filter(par %in% c("alpha_2a", "alpha_2b")) %>% 
   ggplot(aes(x = value, y=model)) +
   geom_density_ridges(scale=1.2, alpha=0.8, show.legend = FALSE, 
-                      ### The only change is here
                       aes(fill = model),
                       bandwidth = 0.075) +
   scale_color_manual(values = colors_traces_2) +   
@@ -133,10 +103,8 @@ p2_alpha <- traces_2_long %>%
   theme_classic() +
   ylab("Posterior density") +
   xlab(TeX("Rate of attraction $\\alpha$")) +
-  #theme(axis.ticks.x = element_blank(),
-  #      axis.text.x = element_blank()
-  #      ) +
-  coord_cartesian(xlim=c(0.0, 4))
+  scale_x_continuous(breaks=c(0,1,2)) +
+  coord_cartesian(xlim=c(0.0, 2.5))
 p2_alpha
 
 # sigma2
@@ -144,7 +112,6 @@ p2_sigma2 <- traces_2_long %>%
   filter(par %in% c("sigma2_2a", "sigma2_2b")) %>% 
   ggplot(aes(x = value, y=model)) +
   geom_density_ridges(scale=1.2, alpha=0.8, show.legend = FALSE, 
-                      ### The only change is here
                       aes(fill = model),
                       bandwidth = 0.1) +
   scale_color_manual(values = colors_traces_2) +   
@@ -152,10 +119,7 @@ p2_sigma2 <- traces_2_long %>%
   theme_classic() +
   ylab("") +
   xlab(TeX("Diffusion variance $\\sigma^2$")) +
-#theme(axis.ticks.x = element_blank(),
-#      axis.text.x = element_blank()
-#      ) +
-  coord_cartesian(xlim=c(0.0, 6))
+  coord_cartesian(xlim=c(0.0, 3))
 p2_sigma2
 
 # theta
@@ -163,35 +127,30 @@ p2_theta <- traces_2_long %>%
   filter(par %in% c("theta_2a", "theta_2b")) %>% 
   ggplot(aes(x = value, y=model)) +
   geom_density_ridges(scale=1.2, alpha=0.8, show.legend = FALSE, 
-                      ### The only change is here
                       aes(fill = model),
                       bandwidth = 0.05) +
   scale_color_manual(values = colors_traces_2) +   
   scale_fill_manual(values = colors_traces_2) + 
   theme_classic() +
   ylab("") +
-  xlab(TeX("Optimum $\\theta$")) #+
-#theme(axis.ticks.x = element_blank(),
-#      axis.text.x = element_blank()
-#      ) +
-#coord_cartesian(xlim=c(0, 0.8))
+  xlab(TeX("Optimum $\\theta$"))
 p2_theta
 
-########
-# sdbm #
-########
+#######################
+# Comparison to SD-BM #
+#######################
 
 traces_3 <- list(tibble(.rows = 20002))
 
-traces_3[[1]]$sigma2_3_3a <- trace_3a[[1]]$`sigma2[1]`
-traces_3[[1]]$sigma2_3_3b <- trace_3b[[1]]$`sigma2[1]`
-traces_3[[1]]$sigma2_3_3c <- trace_3c[[1]]$`sigma2[1]`
+traces_3[[1]]$sigma2_1_3a <- trace_3a[[1]]$`sigma2[1]`
+traces_3[[1]]$sigma2_1_3b <- trace_3b[[1]]$`sigma2[1]`
+traces_3[[1]]$sigma2_1_3c <- trace_3c[[1]]$`sigma2[1]`
 traces_3[[1]]$sigma2_2_3a <- trace_3a[[1]]$`sigma2[2]`
 traces_3[[1]]$sigma2_2_3b <- trace_3b[[1]]$`sigma2[2]`
 traces_3[[1]]$sigma2_2_3c <- trace_3c[[1]]$`sigma2[2]`
-traces_3[[1]]$sigma2_1_3a <- trace_3a[[1]]$`sigma2[3]`
-traces_3[[1]]$sigma2_1_3b <- trace_3b[[1]]$`sigma2[3]`
-traces_3[[1]]$sigma2_1_3c <- trace_3c[[1]]$`sigma2[3]`
+traces_3[[1]]$sigma2_3_3a <- trace_3a[[1]]$`sigma2[3]`
+traces_3[[1]]$sigma2_3_3b <- trace_3b[[1]]$`sigma2[3]`
+traces_3[[1]]$sigma2_3_3c <- trace_3c[[1]]$`sigma2[3]`
 
 traces_3_long <- traces_3[[1]] %>% 
   pivot_longer(cols=c("sigma2_1_3a", "sigma2_1_3b", "sigma2_1_3c",
@@ -199,10 +158,13 @@ traces_3_long <- traces_3[[1]] %>%
                       "sigma2_3_3a", "sigma2_3_3b", "sigma2_3_3c"),
                names_to = "par", values_to = "value") %>% 
   mutate(model = ifelse(endsWith(par, "3a"), "SD-BM", ifelse(endsWith(par, "3b"), "MuSSCRat", "SD-OU")),
-         model = factor(model, levels = c("SD-OU", "MuSSCRat", "SD-BM")))
+         model = factor(model, levels = c("SD-OU", "MuSSCRat", "SD-BM")),
+         par = factor(par, levels = rev(c("sigma2_1_3a", "sigma2_1_3b", "sigma2_1_3c",
+                                          "sigma2_2_3a", "sigma2_2_3b", "sigma2_2_3c",
+                                          "sigma2_3_3a", "sigma2_3_3b", "sigma2_3_3c"))))
 
 
-colors_traces_3 <- colors_traces[c(11,8,5,10,7,4,9,6,3)]
+colors_traces_3 <- colors_traces[c(5,8,11,4,7,10,3,6,9)]
 
 
 p3 <- ggplot(traces_3_long, aes(x = value, y=model)) +

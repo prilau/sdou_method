@@ -46,7 +46,7 @@ cont_var <- cont.var(characterCont)
 # Tree model #
 ##############
 
-tree <- readTrees( "data/artiodactyla.tree" )[1]
+tree <- readTrees( "data/artiodactyla_rescaled.tree" )[1]
 
 ntips <- tree.ntips()
 nbranches <- 2 * ntips - 2

@@ -1,0 +1,90 @@
+################################################################################
+#
+# RevBayes Example: Testing hidden rates for state-dependent OU model
+#
+# authors: Priscilla Lau
+#
+################################################################################
+
+#######################
+# Reading in the Data #
+#######################
+tree <- readTrees("data/artiodactyla.tree")[1]
+root_age <- tree.rootAge()
+
+characterCont <- 1
+cont <- readContinuousCharacterData("data/artiodactyla_Continuous.nex")
+cont.excludeAll()
+cont.includeCharacter(characterCont)
+
+for (j in 1:100){
+  ### Read in the tree
+  char_hist = readCharacterHistory("output/ase/r100.trees")[j]
+
+  # Create some vector for the moves and monitors of this analysis
+  moves    = VectorMoves()
+  monitors = VectorMonitors()
+  avmvn = mvAVMVN(weight=50, waitBeforeLearning=500, waitBeforeUsing=1000)
+
+  ##############################
+  # continuous character model #
+  ##############################
+  
+  min <- 3
+  max <- 7
+
+  #buffer <- cont.maxDifference(characterCont) / 3
+  buffer <- 2
+  Vy <- cont.var(characterCont)
+
+  for (i in 1:3){
+    theta[i] ~ dnUniform(min-buffer, max+buffer)
+    moves.append(mvSlide(theta[i], weight = 1.0) )
+    avmvn.addVariable(theta[i])
+ 
+    a <- ln(2)/root_age
+
+    alpha[i] ~ dnLognormal(ln(a), 0.587405)
+    moves.append(mvScale(alpha[i], weight = 1.0) )
+    avmvn.addVariable(alpha[i])
+
+    sigma2[i] ~ dnLognormal(ln(Vy), 0.587405)
+    moves.append(mvScale(sigma2[i], weight = 1.0) )
+    avmvn.addVariable(sigma2[i])
+  }
+
+  moves.append( avmvn )
+
+  ##########################
+  # Specify the OU process #
+  ##########################
+
+  Y ~ dnPhyloOUSD(char_hist, theta=theta, rootTreatment="optimum", alpha=alpha, sigma=sigma2^0.5)
+  Y.clamp(cont)
+
+  #############
+  # The Model #
+  #############
+
+  mymodel = model(Y)
+
+  monitors.append( mnModel(filename="output/seq_SDOU/trace_r100_" + j + ".log", printgen=10) )
+  monitors.append( mnScreen(printgen=1000) )
+
+  ################
+  # The Analysis #
+  ################
+
+  ### workspace mcmc ###
+  mymcmc = mcmc(mymodel, monitors, moves, nruns=2, combine="mixed")
+
+
+  ### run the MCMC ###
+  mymcmc.burnin(generations=2500, tuningInterval=200) # comment out after first run
+
+  mymcmc.run(generations=25000, tuningInterval=200)
+
+}
+
+## quit ##
+q()

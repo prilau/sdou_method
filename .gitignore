@@ -1,2 +1,8 @@
+**/.DS_store
 **/.Rhistory
-**/.DS_Store
+**/results
+**/old
+history.txt
+**/*.log
+**/output
+**/figures

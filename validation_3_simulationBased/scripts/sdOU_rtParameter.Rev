@@ -1,0 +1,154 @@
+################################################################################
+#
+# RevBayes Validation Test: Ornstein-Uhlenbeck on a fixed tree
+#
+# Model: Continuous character(s) evolve under Ornstein-Uhlenbeck model.
+#
+#
+# authors: Sebastian Hoehna
+#
+################################################################################
+
+## Global settings
+
+NUM_VALIDATION_REPLICATES = 1000
+NUM_MCMC_ITERATIONS       = 10000
+
+
+# create the monitor and moves vectors
+moves     = VectorMoves()
+monitors  = VectorMonitors()
+avmvn = mvAVMVN(weight=50, waitBeforeLearning=500, waitBeforeUsing=1000)
+
+
+#######################
+# Reading in the Data #
+#######################
+characterCont <- 1
+characterDisc <- 1
+
+cont <- readContinuousCharacterData("data/artiodactyla_Continuous.nex")
+cont.excludeAll()
+cont.includeCharacter(characterCont)
+
+disc <- readDiscreteCharacterData("data/artiodactyla_Discrete.nex")
+num_disc_states <- disc.getStateDescriptions().size()
+disc.excludeAll()
+disc.includeCharacter(characterDisc)
+
+
+# Get some useful variables from the data. We need these later on.
+taxa <- cont.taxa()
+cont_var <- cont.var(characterCont)
+
+##############
+# Tree model #
+##############
+
+tree <- readTrees( "data/artiodactyla.tree" )[1]
+
+ntips <- tree.ntips()
+nbranches <- 2 * ntips - 2
+root_age <- tree.rootAge()
+
+# make the Q matrix
+lambda ~ dnLognormal(ln(0.05), 0.4)
+moves.append( mvScale(lambda, weight=1.0) )
+avmvn.addVariable( lambda )
+
+rates ~ dnDirichlet(rep(1, num_disc_states*(num_disc_states-1))*10)
+moves.append( mvBetaSimplex( rates, weight=2 ) )
+moves.append( mvDirichletSimplex( rates, weight=2 ) )
+avmvn.addVariable( rates )
+
+Q := fnFreeK(rates*lambda, rescaled=FALSE)
+
+
+
+#rf_prior <- rep(1,num_disc_states)
+#rf ~ dnDirichlet( rf_prior )
+#moves.append( mvBetaSimplex( rf, weight=2 ) )
+#moves.append( mvDirichletSimplex( rf, weight=2 ) )
+#avmvn.addVariable( rf )
+
+# make the data-augmented CTCM model
+#X ~ dnPhyloCTMCDASiteIID(tree, Q, branchRates=1, type="Standard", rootFrequencies=rf, nSites=1)
+X ~ dnPhyloCTMCDASiteIID(tree, Q, branchRates=1, type="Standard", nSites=1)
+X.clamp(disc)
+
+# include proposals for the discrete character history
+moves.append( mvCharacterHistory(ctmc=X, qmap_site=Q, graph="node",   proposal="rejection", weight=120.0) )
+moves.append( mvCharacterHistory(ctmc=X, qmap_site=Q, graph="branch", proposal="rejection", weight=120.0) )
+
+# keep track of the number of transitions
+#for(i in 1:nbranches) {
+#    num_changes[i] := sum(X.numCharacterChanges(i))
+#}
+#total_num_changes := sum(num_changes)
+
+char_hist := X.characterHistories()
+
+
+
+#######################
+# OU-Model Parameters #
+#######################
+
+for (i in 1:num_disc_states){
+  theta[i] ~ dnUniform(3, 7)
+  moves.append(mvSlide(theta[i], weight = 1.0) )
+  avmvn.addVariable(theta[i])
+
+  a <- ln(2)/root_age
+
+  alpha[i] ~ dnLognormal(ln(a), 0.587405)
+  moves.append(mvScale(alpha[i], weight = 1.0) )
+  avmvn.addVariable(alpha[i])
+
+  sigma2[i] ~ dnLognormal(ln(cont_var), 0.587405)
+  moves.append(mvScale(sigma2[i], weight = 1.0) )
+  avmvn.addVariable(sigma2[i])
+
+}
+
+y_root ~ dnUniform(3, 7)
+moves.append(mvSlide(y_root, weight = 1.0))
+avmvn.addVariable(y_root)
+
+moves.append( avmvn )
+
+
+###################
+# PhyloCTMC Model #
+###################
+
+Y ~ dnPhyloOUSD(characterHistory=char_hist, alpha=alpha, theta=theta, sigma=sigma2^0.5, rootTreatment="parameter", rootState=y_root, nSites=1)
+
+# attach the data
+Y.clamp(cont)
+
+
+
+#############
+# THE Model #
+#############
+
+# We define our model.
+# We can use any node of our model as a handle
+mymodel = model(Y)
+
+
+
+
+mymcmc = mcmc(mymodel, monitors, moves)
+
+validation = validationAnalysis( mymcmc, NUM_VALIDATION_REPLICATES, directory="output/validation_rtParameter_rfStationary" )
+validation.burnin(generations=0.1*NUM_MCMC_ITERATIONS,tuningInterval=200)
+validation.run(generations=NUM_MCMC_ITERATIONS)
+validation.summarize(coverageProbability=0.9)
+validation.summarize(coverageProbability=0.5)
+
+
+
+# you may want to quit RevBayes now
+q()

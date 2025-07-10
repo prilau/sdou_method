@@ -1,0 +1,35 @@
+tree <- readTrees("data/artiodactyla.tree")[1]
+
+anc_states = readAncestralStateTrace("output/joint_SDOU/anc_states.log")
+
+anc_tree = ancestralStateTree(
+  tree=tree,
+  ancestral_state_trace_vector=anc_states,
+  include_start_states=false,
+  file="output/joint_SDOU/anc_states_marginal.log",
+  summary_statistic="MAP",
+  reconstruction="marginal",
+  burnin=0.0,
+  nStates=3,
+  site=1)
+
+anc_tree = ancestralStateTree(
+  tree=tree,
+  ancestral_state_trace_vector=anc_states,
+  include_start_states=false,
+  file="output/joint_SDOU/anc_states_conditional.log",
+  summary_statistic="MAP",
+  reconstruction="conditional",
+  burnin=0.0,
+  nStates=3,
+  site=1)
+
+anc_states_stoch_map = readAncestralStateTrace("output/joint_SDOU/charhist_cleanedup.log")
+char_map_tree = characterMapTree(tree=tree,
+                 ancestral_state_trace_vector=anc_states_stoch_map,
+                 character_file="output/joint_SDOU/marginal_character.tre",
+                 posterior_file="output/joint_SDOU/marginal_posterior.tre",
+                 burnin=0.0,
+                 num_time_slices=500)
+
+q()

@@ -20,9 +20,9 @@ joint[[1]] <- joint[[1]] %>%
   select(!starts_with(c("num_changes", "rate", "total", "lambda", "rf"))) %>% 
   mutate(Replicate_ID = NA)
 traces <- rbind(
-                seq_map[[1]],
-                seq_r100[[1]],
-                joint[[1]]) %>% 
+  seq_map[[1]],
+  seq_r100[[1]],
+  joint[[1]]) %>% 
   mutate(model = factor(model, levels = c("joint", "seq-r100", "seq-MAP")))
 
 
@@ -112,7 +112,7 @@ plot_dummy <- traces %>%
                                                      "Grazers"))
 
 legend <- get_legend2(plot_dummy + theme(legend.position = "right",
-                                   legend.box.margin = margin(0, 0, 0, 12)) +
+                                         legend.box.margin = margin(0, 0, 0, 12)) +
                         guides(fill = guide_legend(override.aes = list(alpha = 0.6))))
 
 
@@ -137,7 +137,9 @@ p1 <- plotAncStatesPie(t = ase_MAP,
                        tip_labels = FALSE,
                        #tip_labels_size = 2,
                        #tip_labels_offset = 1,
-                       pie_colors = c("Browsers"="#CC6677", "Grazers"="#ddcc77", "Mixed feeders"="#44AA99"),
+                       pie_colors = c("Browsers"="#CC6677",
+                                      "Mixed feeders"="#44AA99",
+                                      "Grazers"="#ddcc77"),
                        tip_pies = TRUE,
                        node_pie_size = 2,
                        tip_pie_size = 2,
@@ -154,8 +156,8 @@ colnames(processed_MAP)[8] = "Grazers"
 colnames(processed_MAP)[7] = "Mixed feeders"
 p2 <- plotStochMaps(tree=tree, maps = processed_MAP, color_by = "MAP",
                     colors = c("Browsers"="#CC6677",
-                               "Grazers"="#ddcc77",
-                               "Mixed feeders"="#44aa99"),
+                               "Mixed feeders"="#44aa99",
+                               "Grazers"="#ddcc77"),
                     tip_labels = FALSE#,
                     #tip_labels_size = 2,
                     #tip_labels_offset = 1
@@ -171,7 +173,9 @@ p3 <- plotAncStatesPie(t = ase_da,
                        tip_labels = FALSE,
                        #tip_labels_size = 2,
                        #tip_labels_offset = 1,
-                       pie_colors = c("Browsers"="#CC6677", "Grazers"="#ddcc77", "Mixed feeders"="#44AA99"),
+                       pie_colors = c("Browsers"="#CC6677",
+                                      "Mixed feeders"="#44AA99",
+                                      "Grazers"="#ddcc77"),
                        tip_pies = TRUE,
                        node_pie_size = 2,
                        tip_pie_size = 2,
@@ -193,7 +197,7 @@ p4 <- plotStochMaps(tree=tree, maps = processed_da, color_by = "MAP",
                     tip_labels = FALSE#,
                     #tip_labels_size = 2,
                     #tip_labels_offset = 1
-                    ) +
+) +
   theme(legend.position = "none")
 
 
@@ -204,7 +208,9 @@ ase_joint <- processAncStates("output/joint_SDOU/anc_states_marginal.log",
                               state_labels=c("0"="Browsers", "2"="Grazers", "1"="Mixed feeders"))
 
 p5 <- plotAncStatesPie(t = ase_joint,
-                       pie_colors = c("Browsers"="#CC6677", "Grazers"="#ddcc77", "Mixed feeders"="#44AA99"),
+                       pie_colors = c("Browsers"="#CC6677",
+                                      "Mixed feeders"="#44AA99",
+                                      "Grazers"="#ddcc77"),
                        tip_labels = FALSE,
                        tip_pies = TRUE,
                        node_pie_size = 2,
@@ -222,8 +228,8 @@ colnames(processed_joint)[8] = "Grazers"
 colnames(processed_joint)[7] = "Mixed feeders"
 p6 <- plotStochMaps(tree=tree, maps = processed_joint, color_by = "MAP",
                     colors = c("Browsers"="#CC6677",
-                               "Grazers"="#ddcc77",
-                               "Mixed feeders"="#44aa99"),
+                               "Mixed feeders"="#44aa99",
+                               "Grazers"="#ddcc77"),
                     tip_labels = FALSE
 ) +
   theme(legend.position = "none")
@@ -264,13 +270,13 @@ ptips <- ggplot(df_tips, aes(x=xpos, y=ypos, label=label)) +
   theme_void() +
   coord_cartesian(xlim=c(0,1))
 ptips
-  
+
 #######
 # all #
 #######
 plot_left <- plot_grid(p0w, p0w, p1, p3, p2, p4,
-                   rel_heights = c(1,6,6),
-                   ncol=2) +
+                       rel_heights = c(1,6,6),
+                       ncol=2) +
   draw_plot_label(label=c("(a) Stochastic mapping", "(b) Data augmentation"),
                   x=c(0.25, 0.75),
                   y=12.5/13,
@@ -301,8 +307,8 @@ plot_rightmost <- plot_grid(p0w2, ptips, ptips, p0w2,
                             rel_heights = c(2,6,6,0.08), ncol=1)
 
 plot_maps_all <- cowplot::plot_grid(plot_left, plot_mid, plot_right, plot_rightmost,
-                                rel_widths = c(2,0.01,1,0.8), align = "v",
-                                ncol=4)
+                                    rel_widths = c(2,0.01,1,0.8), align = "v",
+                                    ncol=4)
 
 
 ggsave("figures/case_study_maps.pdf", plot_maps_all, width=7.5, height=6, units="in")
@@ -316,11 +322,11 @@ ase_long <- tb_long <-
 
 for (i in 1:4){
   ase_long[[i]] <-
-    processAncStates(paste0("output/joint_SDOU/long_anc_states_marginal_run_", i, ".log"),
-                            state_labels=c("0"="Browsers",
-                                           "1"="Mixed feeders",
-                                           "2"="Grazers"))
-  tb_long[[i]] <- read.table(paste0("output/joint_SDOU/long_charhist_run_", i, ".log"), header = TRUE)
+    processAncStates(paste0("output/joint_SDOU_validation/long_anc_states_marginal_run_", i, ".log"),
+                     state_labels=c("0"="Browsers",
+                                    "1"="Mixed feeders",
+                                    "2"="Grazers"))
+  tb_long[[i]] <- read.table(paste0("output/joint_SDOU_validation/long_charhist_run_", i, ".log"), header = TRUE)
   simmap_long[[i]] <- read.simmap(text=tb_long[[i]]$char_hist, format = "phylip")
   processed_long[[i]] <- processStochMaps(tree=tree, simmap = simmap_long[[i]],
                                           states = c("0", "1", "2"))
@@ -328,64 +334,48 @@ for (i in 1:4){
   colnames(processed_long[[i]])[7] = "Mixed feeders"
   colnames(processed_long[[i]])[8] = "Grazers"
   
-  if (i<4){
-    p_ase_long[[i]] <- plotAncStatesPie(t = ase_long[[i]],
-                           tip_labels = FALSE,
-                           #tip_labels_size = 2,
-                           #tip_labels_offset = 1,
-                           pie_colors = c("Browsers"="#CC6677", "Grazers"="#ddcc77", "Mixed feeders"="#44AA99"),
-                           tip_pies = TRUE,
-                           node_pie_size = 2,
-                           tip_pie_size = 2,
-                           tree_layout = "rectangular",
-                           state_transparency = 0.9) +
-      theme(legend.position = "none")
-    
-    
-    p_stochmap_long[[i]] <- plotStochMaps(tree=tree, maps = processed_long[[i]], color_by = "MAP",
-                        colors = c("Browsers"="#CC6677",
-                                   "Mixed feeders"="#44aa99",
-                                   "Grazers"="#ddcc77"),
-                        tip_labels = FALSE#,
-                        #tip_labels_size = 2,
-                        #tip_labels_offset = 1
-    ) +
-      theme(legend.position = "none")
-  }
-  else {
-    p_ase_long[[i]] <- plotAncStatesPie(t = ase_joint,
-                           pie_colors = c("Browsers"="#CC6677", "Grazers"="#ddcc77", "Mixed feeders"="#44AA99"),
-                           tip_labels = TRUE,
-                           tip_labels_size = 1.5,
-                           tip_labels_offset = 1,
-                           tip_pies = TRUE,
-                           node_pie_size = 2/(1+1/2.225),
-                           tip_pie_size = 2/(1+1/2.225),
-                           tree_layout = "rectangular",
-                           state_transparency = 0.9) +
-      theme(legend.position = "none")
-    p_stochmap_long[[i]] <- plotStochMaps(tree=tree, maps = processed_joint, color_by = "MAP",
-                        colors = c("Browsers"="#CC6677",
-                                   "Grazers"="#ddcc77",
-                                   "Mixed feeders"="#44aa99"),
-                        tip_labels = TRUE,
-                        tip_labels_size = 1.5,
-                        tip_labels_offset = 0.5
-    ) +
-      theme(legend.position = "none")
-  }
+  p_ase_long[[i]] <- plotAncStatesPie(t = ase_long[[i]],
+                                      tip_labels = FALSE,
+                                      #tip_labels_size = 2,
+                                      #tip_labels_offset = 1,
+                                      pie_colors = c("Browsers"="#CC6677",
+                                                     "Mixed feeders"="#44AA99",
+                                                     "Grazers"="#ddcc77"),
+                                      tip_pies = TRUE,
+                                      node_pie_size = 2,
+                                      tip_pie_size = 2,
+                                      tree_layout = "rectangular",
+                                      state_transparency = 0.9,
+                                      tree_linewidth = 0.75) +
+    theme(legend.position = "none")
+  
+  
+  p_stochmap_long[[i]] <- plotStochMaps(tree=tree, maps = processed_long[[i]], color_by = "MAP",
+                                        colors = c("Browsers"="#CC6677",
+                                                   "Mixed feeders"="#44aa99",
+                                                   "Grazers"="#ddcc77"),
+                                        tip_labels = FALSE#,
+                                        #tip_labels_size = 2,
+                                        #tip_labels_offset = 1
+  ) +
+    theme(legend.position = "none")
 }
 
 
-plot_maps_long <- cowplot::plot_grid(p_ase_long[[1]], p_ase_long[[2]], p_ase_long[[3]], p_ase_long[[4]],
-                                     p_stochmap_long[[1]], p_stochmap_long[[2]], p_stochmap_long[[3]], p_stochmap_long[[4]],
-                                rel_widths = c(1,1,1, 1+1/2.225,1,1,1,1,1+1/2.225),
-                                labels = c("Run 1", "Run 2", "Run 3", "Run 4"),
-                                hjust = 0,
-                                label_size = 10,
-                                ncol=4)
+plot_long_top <- plot_grid(p0w, p0w, p0w, p0w, ncol=4) +
+  draw_plot_label(label=c("Long run 1", "Long run 2", "Long run 3", "Long run 4"),
+                  x=c(1,3,5,7)/8,
+                  y=0.5,
+                  hjust=0.5, vjust=.5, size=10)
+plot_long_bot <- plot_grid(p_ase_long[[1]], p_ase_long[[2]],
+                            p_ase_long[[3]], p_ase_long[[4]],
+                            p_stochmap_long[[1]], p_stochmap_long[[2]],
+                            p_stochmap_long[[3]], p_stochmap_long[[4]],
+                            ncol=4)
+plot_long <- plot_grid(plot_long_top, plot_long_bot,
+                       rel_heights = c(1,12), ncol=1)
 
-ggsave("figures/case_study_maps_long.pdf", plot_maps_long, width=7.5, height=7.5, units="in")
+ggsave("figures/case_study_maps_long.pdf", plot_long, width=7.5, height=6, units="in")
 
 
 
@@ -393,20 +383,22 @@ ggsave("figures/case_study_maps_long.pdf", plot_maps_long, width=7.5, height=7.5
 # large and small fixed alphas #
 ################################
 ase_largeAlpha <-
-    processAncStates(paste0("output/joint_SDOU/largeAlpha_anc_states_marginal.log"),
-                     state_labels=c("0"="Browsers",
-                                    "1"="Mixed feeders",
-                                    "2"="Grazers"))
-tb_largeAlpha <- read.table(paste0("output/joint_SDOU/largeAlpha_charhist.log"), header = TRUE)
+  processAncStates(paste0("output/joint_SDOU_validation/largeAlpha_anc_states_marginal.log"),
+                   state_labels=c("0"="Browsers",
+                                  "1"="Mixed feeders",
+                                  "2"="Grazers"))
+tb_largeAlpha <- read.table(paste0("output/joint_SDOU_validation/largeAlpha_charhist.log"), header = TRUE)
 simmap_largeAlpha <- read.simmap(text=tb_largeAlpha$char_hist, format = "phylip")
 processed_largeAlpha <- processStochMaps(tree=tree, simmap = simmap_largeAlpha,
-                                        states = c("0", "1", "2"))
+                                         states = c("0", "1", "2"))
 colnames(processed_largeAlpha)[6] = "Browsers"
 colnames(processed_largeAlpha)[7] = "Mixed feeders"
 colnames(processed_largeAlpha)[8] = "Grazers"
 
 p7 <- plotAncStatesPie(t = ase_largeAlpha ,
-                       pie_colors = c("Browsers"="#CC6677", "Mixed feeders"="#44AA99", "Grazers"="#ddcc77"),
+                       pie_colors = c("Browsers"="#CC6677",
+                                      "Mixed feeders"="#44AA99",
+                                      "Grazers"="#ddcc77"),
                        tip_labels = FALSE,
                        tip_pies = TRUE,
                        node_pie_size = 2,
@@ -419,18 +411,18 @@ p8 <- plotStochMaps(tree=tree, maps = processed_largeAlpha, color_by = "MAP",
                     colors = c("Browsers"="#CC6677",
                                "Mixed feeders"="#44aa99",
                                "Grazers"="#ddcc77"
-                               ),
+                    ),
                     tip_labels = FALSE
 ) +
   theme(legend.position = "none")
 
 
 ase_smallAlpha <-
-  processAncStates(paste0("output/joint_SDOU/smallAlpha_anc_states_marginal.log"),
+  processAncStates(paste0("output/joint_SDOU_validation/smallAlpha_anc_states_marginal.log"),
                    state_labels=c("0"="Browsers",
                                   "1"="Mixed feeders",
                                   "2"="Grazers"))
-tb_smallAlpha <- read.table(paste0("output/joint_SDOU/smallAlpha_charhist.log"), header = TRUE)
+tb_smallAlpha <- read.table(paste0("output/joint_SDOU_validation/smallAlpha_charhist.log"), header = TRUE)
 simmap_smallAlpha <- read.simmap(text=tb_smallAlpha$char_hist, format = "phylip")
 processed_smallAlpha <- processStochMaps(tree=tree, simmap = simmap_smallAlpha,
                                          states = c("0", "1", "2"))
@@ -439,7 +431,9 @@ colnames(processed_smallAlpha)[7] = "Mixed feeders"
 colnames(processed_smallAlpha)[8] = "Grazers"
 
 p9 <- plotAncStatesPie(t = ase_smallAlpha ,
-                       pie_colors = c("Browsers"="#CC6677", "Mixed feeders"="#44AA99", "Grazers"="#ddcc77"),
+                       pie_colors = c("Browsers"="#CC6677",
+                                      "Mixed feeders"="#44AA99",
+                                      "Grazers"="#ddcc77"),
                        tip_labels = FALSE,
                        tip_pies = TRUE,
                        node_pie_size = 2,
@@ -449,6 +443,78 @@ p9 <- plotAncStatesPie(t = ase_smallAlpha ,
                        tree_linewidth = 0.75) +
   theme(legend.position = "none")
 p10 <- plotStochMaps(tree=tree, maps = processed_smallAlpha, color_by = "MAP",
+                     colors = c("Browsers"="#CC6677",
+                                "Mixed feeders"="#44aa99",
+                                "Grazers"="#ddcc77"
+                     ),
+                     tip_labels = FALSE
+) +
+  theme(legend.position = "none")
+
+
+plot_row1 <- plot_grid(p0g, p0w2, p0g,
+                       rel_widths=c(0.98,0.08,2.94), ncol=3) +
+  draw_plot_label(label=c("Stochastic mapping",
+                          "State-dependent OU model"),
+                  x=c(0.49/4, (0.49*5+0.08)/4),
+                  y=0.5,
+                  hjust=.5, vjust=.5, size=12)
+plot_row2 <- plot_grid(p0w, p0w2, p0w, p0w, p0w,
+                       rel_widths=c(0.98,0.08,0.98,0.98,0.98), ncol=5) +
+  draw_plot_label(label=c("No continuous character",
+                          "Fixed, large alpha",
+                          "Estimated alpha",
+                          "Fixed, small alpha"),
+                  x=c(0.49/4,
+                      (0.49*3+0.08)/4,
+                      (0.49*5+0.08)/4,
+                      (0.49*7+0.08)/4),
+                  y=0.5,
+                  hjust=.5, vjust=.5, size=8)
+
+plot_row34 <- plot_grid(p1, p0w2, p7, p5, p9, p2, p0w2, p8, p6, p10,
+                        rel_widths=c(0.98,0.08,0.98,0.98,0.98), ncol=5)
+plot_alphas <- plot_grid(plot_row1, plot_row2, plot_row34,
+                         rel_heights = c(1,1,12), ncol=1)
+
+
+
+
+
+plot_alphas
+ggsave("figures/case_study_maps_alphas.pdf", plot_alphas, width=7.5, height=6, units="in")
+
+
+
+#################################################
+# simulate cont char from reconstructed history #
+#################################################
+ase_simDiscOnly <-
+  processAncStates(paste0("output/joint_SDOU_validation/simDiscOnly_anc_states_marginal.log"),
+                   state_labels=c("0"="Browsers",
+                                  "1"="Mixed feeders",
+                                  "2"="Grazers"))
+tb_simDiscOnly <- read.table(paste0("output/joint_SDOU_validation/simDiscOnly_charhist.log"), header = TRUE)
+simmap_simDiscOnly <- read.simmap(text=tb_simDiscOnly$char_hist, format = "phylip")
+processed_simDiscOnly <- processStochMaps(tree=tree, simmap = simmap_simDiscOnly,
+                                         states = c("0", "1", "2"))
+colnames(processed_simDiscOnly)[6] = "Browsers"
+colnames(processed_simDiscOnly)[7] = "Mixed feeders"
+colnames(processed_simDiscOnly)[8] = "Grazers"
+
+p11 <- plotAncStatesPie(t = ase_simDiscOnly ,
+                       pie_colors = c("Browsers"="#CC6677",
+                                      "Mixed feeders"="#44AA99",
+                                      "Grazers"="#ddcc77"),
+                       tip_labels = FALSE,
+                       tip_pies = TRUE,
+                       node_pie_size = 2,
+                       tip_pie_size = 2,
+                       tree_layout = "rectangular",
+                       state_transparency = 0.9,
+                       tree_linewidth = 0.75) +
+  theme(legend.position = "none")
+p12 <- plotStochMaps(tree=tree, maps = processed_simDiscOnly, color_by = "MAP",
                     colors = c("Browsers"="#CC6677",
                                "Mixed feeders"="#44aa99",
                                "Grazers"="#ddcc77"
@@ -458,34 +524,73 @@ p10 <- plotStochMaps(tree=tree, maps = processed_smallAlpha, color_by = "MAP",
   theme(legend.position = "none")
 
 
+ase_simDiscCont <-
+  processAncStates(paste0("output/joint_SDOU_validation/simDiscCont_anc_states_marginal.log"),
+                   state_labels=c("0"="Browsers",
+                                  "1"="Mixed feeders",
+                                  "2"="Grazers"))
+tb_simDiscCont <- read.table(paste0("output/joint_SDOU_validation/simDiscCont_charhist.log"), header = TRUE)
+simmap_simDiscCont <- read.simmap(text=tb_simDiscCont$char_hist, format = "phylip")
+processed_simDiscCont <- processStochMaps(tree=tree, simmap = simmap_simDiscCont,
+                                         states = c("0", "1", "2"))
+colnames(processed_simDiscCont)[6] = "Browsers"
+colnames(processed_simDiscCont)[7] = "Mixed feeders"
+colnames(processed_simDiscCont)[8] = "Grazers"
+
+p13 <- plotAncStatesPie(t = ase_simDiscCont ,
+                       pie_colors = c("Browsers"="#CC6677",
+                                      "Mixed feeders"="#44AA99",
+                                      "Grazers"="#ddcc77"),
+                       tip_labels = FALSE,
+                       tip_pies = TRUE,
+                       node_pie_size = 2,
+                       tip_pie_size = 2,
+                       tree_layout = "rectangular",
+                       state_transparency = 0.9,
+                       tree_linewidth = 0.75) +
+  theme(legend.position = "none")
+p14 <- plotStochMaps(tree=tree, maps = processed_simDiscCont, color_by = "MAP",
+                     colors = c("Browsers"="#CC6677",
+                                "Mixed feeders"="#44aa99",
+                                "Grazers"="#ddcc77"
+                     ),
+                     tip_labels = FALSE
+) +
+  theme(legend.position = "none")
+
+
 plot_row1 <- plot_grid(p0g, p0w2, p0g,
-                       rel_widths=c(0.95,0.1,2.95), ncol=3) +
+                       rel_widths=c(0.98,0.08,2.94), ncol=3) +
   draw_plot_label(label=c("Stochastic mapping",
                           "State-dependent OU model"),
-                  x=c(1/8, 5/8),
+                  x=c(0.49/4, (0.49*5+0.08)/4),
                   y=0.5,
                   hjust=.5, vjust=.5, size=12)
 plot_row2 <- plot_grid(p0w, p0w2, p0w, p0w, p0w,
-                       rel_widths=c(0.95,0.1,2.95/3,2.95/3,2.95/3), ncol=5) +
-  draw_plot_label(label=c("No continuous character", "",
-                          "Fixed, large alpha",
-                          "Fixed, small alpha",
-                          "Estimated alpha"),
-                  x=c(0.95/2/3.9, 0,
-                      (0.95+0.1+2.95/3/2)/4,
-                      (0.95+0.1+1.5*2.95/3)/4,
-                      (0.95+0.1+2.5*2.95/3)/4),
+                       rel_widths=c(0.98,0.08,0.98,0.98,0.98), ncol=5) +
+  draw_plot_label(label=c("No continuous character",
+                          "Continuous character\nsimulated under MAP history\nfrom stochastic mapping",
+                          "Empirical continuous character",
+                          "Continuous character\nsimulated under MAP history\nfrom the SD-OU model"),
+                  x=c(0.49/4,
+                      (0.49*3+0.08)/4,
+                      (0.49*5+0.08)/4,
+                      (0.49*7+0.08)/4),
                   y=0.5,
                   hjust=.5, vjust=.5, size=8)
 
-plot_row34 <- plot_grid(p1, p0w2, p7, p9, p5, p2, p0w2, p8, p10, p6,
-                       rel_widths=c(0.95,0.1,0.95,0.95,0.95), ncol=5)
-plot_alphas <- plot_grid(plot_row1, plot_row2, plot_row34,
-                         rel_heights = c(1,1,12), ncol=1)
+plot_row34 <- plot_grid(p1, p0w2, p11, p5, p13, p2, p0w2, p12, p6, p14,
+                        rel_widths=c(0.98,0.08,0.98,0.98,0.98), ncol=5)
+plot_sims <- plot_grid(plot_row1, plot_row2, plot_row34,
+                         rel_heights = c(1,1.5,12), ncol=1)
 
 
 
-ggsave("figures/case_study_maps_alphas.pdf", plot_alphas, width=7.5, height=6, units="in")
+
+
+plot_sims
+ggsave("figures/case_study_maps_sims.pdf", plot_sims, width=7.5, height=6, units="in")
+
 
 
 

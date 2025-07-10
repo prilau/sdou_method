@@ -1,62 +1,13 @@
 tree <- readTrees("data/artiodactyla.tree")[1]
 
-anc_states = readAncestralStateTrace("output/joint_SDOU/anc_states.log")
-
-anc_tree = ancestralStateTree(
-  tree=tree,
-  ancestral_state_trace_vector=anc_states,
-  include_start_states=false,
-  file="output/joint_SDOU/anc_states_marginal.log",
-  summary_statistic="MAP",
-  reconstruction="marginal",
-  burnin=0.0,
-  nStates=3,
-  site=1)
-
-anc_tree = ancestralStateTree(
-  tree=tree,
-  ancestral_state_trace_vector=anc_states,
-  include_start_states=false,
-  file="output/joint_SDOU/anc_states_conditional.log",
-  summary_statistic="MAP",
-  reconstruction="conditional",
-  burnin=0.0,
-  nStates=3,
-  site=1)
-
-
-anc_states = readAncestralStateTrace("output/data_augmentation/anc_states.log")
-
-anc_tree = ancestralStateTree(
-  tree=tree,
-  ancestral_state_trace_vector=anc_states,
-  include_start_states=false,
-  file="output/data_augmentation/anc_states_marginal.log",
-  summary_statistic="MAP",
-  reconstruction="marginal",
-  burnin=0.0,
-  nStates=3,
-  site=1)
-
-anc_tree = ancestralStateTree(
-  tree=tree,
-  ancestral_state_trace_vector=anc_states,
-  include_start_states=false,
-  file="output/data_augmentation/anc_states_conditional.log",
-  summary_statistic="MAP",
-  reconstruction="conditional",
-  burnin=0.0,
-  nStates=3,
-  site=1)
-  
 #### long runs
-anc_states = readAncestralStateTrace("output/joint_SDOU/long_anc_states_run_1.log")
+anc_states = readAncestralStateTrace("output/joint_SDOU_validation/long_anc_states_run_1.log")
 
 anc_tree = ancestralStateTree(
   tree=tree,
   ancestral_state_trace_vector=anc_states,
   include_start_states=false,
-  file="output/joint_SDOU/long_anc_states_marginal_run_1.log",
+  file="output/joint_SDOU_validation/long_anc_states_marginal_run_1.log",
   summary_statistic="MAP",
   reconstruction="marginal",
   burnin=0.0,
@@ -67,7 +18,7 @@ anc_tree = ancestralStateTree(
   tree=tree,
   ancestral_state_trace_vector=anc_states,
   include_start_states=false,
-  file="output/joint_SDOU/long_anc_states_conditional_run_1.log",
+  file="output/joint_SDOU_validation/long_anc_states_conditional_run_1.log",
   summary_statistic="MAP",
   reconstruction="conditional",
   burnin=0.0,
@@ -79,7 +30,7 @@ anc_tree = ancestralStateTree(
   tree=tree,
   ancestral_state_trace_vector=anc_states,
   include_start_states=false,
-  file="output/joint_SDOU/long_anc_states_marginal_run_2.log",
+  file="output/joint_SDOU_validation/long_anc_states_marginal_run_2.log",
   summary_statistic="MAP",
   reconstruction="marginal",
   burnin=0.0,
@@ -90,7 +41,7 @@ anc_tree = ancestralStateTree(
   tree=tree,
   ancestral_state_trace_vector=anc_states,
   include_start_states=false,
-  file="output/joint_SDOU/long_anc_states_conditional_run_2.log",
+  file="output/joint_SDOU_validation/long_anc_states_conditional_run_2.log",
   summary_statistic="MAP",
   reconstruction="conditional",
   burnin=0.0,
@@ -102,7 +53,7 @@ anc_tree = ancestralStateTree(
   tree=tree,
   ancestral_state_trace_vector=anc_states,
   include_start_states=false,
-  file="output/joint_SDOU/long_anc_states_marginal_run_3.log",
+  file="output/joint_SDOU_validation/long_anc_states_marginal_run_3.log",
   summary_statistic="MAP",
   reconstruction="marginal",
   burnin=0.0,
@@ -113,7 +64,7 @@ anc_tree = ancestralStateTree(
   tree=tree,
   ancestral_state_trace_vector=anc_states,
   include_start_states=false,
-  file="output/joint_SDOU/long_anc_states_conditional_run_3.log",
+  file="output/joint_SDOU_validation/long_anc_states_conditional_run_3.log",
   summary_statistic="MAP",
   reconstruction="conditional",
   burnin=0.0,
@@ -125,7 +76,7 @@ anc_tree = ancestralStateTree(
   tree=tree,
   ancestral_state_trace_vector=anc_states,
   include_start_states=false,
-  file="output/joint_SDOU/long_anc_states_marginal_run_4.log",
+  file="output/joint_SDOU_validation/long_anc_states_marginal_run_4.log",
   summary_statistic="MAP",
   reconstruction="marginal",
   burnin=0.0,
@@ -136,20 +87,20 @@ anc_tree = ancestralStateTree(
   tree=tree,
   ancestral_state_trace_vector=anc_states,
   include_start_states=false,
-  file="output/joint_SDOU/long_anc_states_conditional_run_4.log",
+  file="output/joint_SDOU_validation/long_anc_states_conditional_run_4.log",
   summary_statistic="MAP",
   reconstruction="conditional",
   burnin=0.0,
   nStates=3,
   site=1)
   
-anc_states = readAncestralStateTrace("output/joint_SDOU/largeAlpha_anc_states.log")
+anc_states = readAncestralStateTrace("output/joint_SDOU_validation/largeAlpha_anc_states.log")
 
 anc_tree = ancestralStateTree(
   tree=tree,
   ancestral_state_trace_vector=anc_states,
   include_start_states=false,
-  file="output/joint_SDOU/largeAlpha_anc_states_marginal.log",
+  file="output/joint_SDOU_validation/largeAlpha_anc_states_marginal.log",
   summary_statistic="MAP",
   reconstruction="marginal",
   burnin=0.0,
@@ -160,20 +111,20 @@ anc_tree = ancestralStateTree(
   tree=tree,
   ancestral_state_trace_vector=anc_states,
   include_start_states=false,
-  file="output/joint_SDOU/largeAlpha_anc_states_conditional.log",
+  file="output/joint_SDOU_validation/largeAlpha_anc_states_conditional.log",
   summary_statistic="MAP",
   reconstruction="conditional",
   burnin=0.0,
   nStates=3,
   site=1)
 
-anc_states = readAncestralStateTrace("output/joint_SDOU/smallAlpha_anc_states.log")
+anc_states = readAncestralStateTrace("output/joint_SDOU_validation/smallAlpha_anc_states.log")
 
 anc_tree = ancestralStateTree(
   tree=tree,
   ancestral_state_trace_vector=anc_states,
   include_start_states=false,
-  file="output/joint_SDOU/smallAlpha_anc_states_marginal.log",
+  file="output/joint_SDOU_validation/smallAlpha_anc_states_marginal.log",
   summary_statistic="MAP",
   reconstruction="marginal",
   burnin=0.0,
@@ -184,7 +135,56 @@ anc_tree = ancestralStateTree(
   tree=tree,
   ancestral_state_trace_vector=anc_states,
   include_start_states=false,
-  file="output/joint_SDOU/smallAlpha_anc_states_conditional.log",
+  file="output/joint_SDOU_validation/smallAlpha_anc_states_conditional.log",
+  summary_statistic="MAP",
+  reconstruction="conditional",
+  burnin=0.0,
+  nStates=3,
+  site=1)
+  
+anc_states = readAncestralStateTrace("output/joint_SDOU_validation/simDiscOnly_anc_states.log")
+
+anc_tree = ancestralStateTree(
+  tree=tree,
+  ancestral_state_trace_vector=anc_states,
+  include_start_states=false,
+  file="output/joint_SDOU_validation/simDiscOnly_anc_states_marginal.log",
+  summary_statistic="MAP",
+  reconstruction="marginal",
+  burnin=0.0,
+  nStates=3,
+  site=1)
+
+anc_tree = ancestralStateTree(
+  tree=tree,
+  ancestral_state_trace_vector=anc_states,
+  include_start_states=false,
+  file="output/joint_SDOU_validation/simDiscOnly_anc_states_conditional.log",
+  summary_statistic="MAP",
+  reconstruction="conditional",
+  burnin=0.0,
+  nStates=3,
+  site=1)
+
+
+anc_states = readAncestralStateTrace("output/joint_SDOU_validation/simDiscCont_anc_states.log")
+
+anc_tree = ancestralStateTree(
+  tree=tree,
+  ancestral_state_trace_vector=anc_states,
+  include_start_states=false,
+  file="output/joint_SDOU_validation/simDiscCont_anc_states_marginal.log",
+  summary_statistic="MAP",
+  reconstruction="marginal",
+  burnin=0.0,
+  nStates=3,
+  site=1)
+
+anc_tree = ancestralStateTree(
+  tree=tree,
+  ancestral_state_trace_vector=anc_states,
+  include_start_states=false,
+  file="output/joint_SDOU_validation/simDiscCont_anc_states_conditional.log",
   summary_statistic="MAP",
   reconstruction="conditional",
   burnin=0.0,

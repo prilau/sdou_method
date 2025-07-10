@@ -121,8 +121,14 @@ simulateContinuous = function(tree, alpha, sigma2, theta) {
   preorder <- rev(ape::postorder(tree))
   edges <- tree$edge
   root_node <- length(tree$tip.label) + 1
-  state = tree$node.states[root_node]
-  mu_at_nodes <- rep(0, length(tree$node.states))
+  if (is.null(tree$node.states)){
+    state = names(unlist(tree$maps[which(tree$edge[,1]==root_node)])[1])
+    mu_at_nodes <- rep(0, tree$Nnode)
+  } else {
+    state = tree$node.states[root_node]
+    mu_at_nodes <- rep(0, length(tree$node.states))
+  }
+
   mu_at_nodes[root_node] <- theta[[state]]
   
   for (edge_index in preorder){
@@ -209,7 +215,8 @@ simmap_to_ancStates <- function(input_path=NULL, input_simmap=NULL, output_path,
 simmap_to_stochmap <- function(input_path=NULL, output_path, tree, simmaps=NULL){
   index_to_rev <- RevGadgets::matchNodes(tree)
   if (is.null(simmaps)){
-    simmaps <- read.simmap(input_path, format="phylip")
+    tb <- read.table(input_path, header = TRUE)
+    simmaps <- read.simmap(text=tb$char_hist, format="phylip")
   }
   df_rev <- data.frame()
   

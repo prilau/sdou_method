@@ -16,6 +16,7 @@ OUwie.fixed(sm,trait,model=c("OUMVA"), simmap.tree=TRUE, scaleHeight=FALSE,
 
 
 sd_logL_pruning(sm, cont, alpha, sigma.sq, theta)
+sd_logL_vcv(sm, cont, alpha, sigma.sq, theta)
 
 
 

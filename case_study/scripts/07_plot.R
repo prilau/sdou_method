@@ -8,7 +8,12 @@ library(RevGadgets)
 library(tidyverse)
 source("../utility/functions.R")
 
+tree <- readTrees("data/artiodactyla.tree")
+t <- read.tree("data/artiodactyla.tree")
 
+###############
+# plot traces #
+###############
 
 seq_map  <- readTrace("output/seq_SDOU/trace_MAP.log", burnin = 0.0)
 seq_map[[1]]$model <- "seq-MAP"
@@ -125,8 +130,6 @@ ggsave("figures/case_study_posterior.pdf", plot_all, width=8, height=3, units="i
 
 
 
-tree <- readTrees("data/artiodactyla.tree")
-t <- read.tree("data/artiodactyla.tree")
 
 ######################
 # stochastic mapping #
@@ -489,108 +492,297 @@ ggsave("figures/case_study_maps_alphas.pdf", plot_alphas, width=7.5, height=6, u
 #################################################
 # simulate cont char from reconstructed history #
 #################################################
-ase_simDiscOnly <-
-  processAncStates(paste0("output/joint_SDOU_validation/simDiscOnly_anc_states_marginal.log"),
-                   state_labels=c("0"="Browsers",
-                                  "1"="Mixed feeders",
-                                  "2"="Grazers"))
-tb_simDiscOnly <- read.table(paste0("output/joint_SDOU_validation/simDiscOnly_charhist.log"), header = TRUE)
-simmap_simDiscOnly <- read.simmap(text=tb_simDiscOnly$char_hist, format = "phylip")
-processed_simDiscOnly <- processStochMaps(tree=tree, simmap = simmap_simDiscOnly,
-                                         states = c("0", "1", "2"))
-colnames(processed_simDiscOnly)[6] = "Browsers"
-colnames(processed_simDiscOnly)[7] = "Mixed feeders"
-colnames(processed_simDiscOnly)[8] = "Grazers"
+#ase_simDiscOnly <-
+#  processAncStates(paste0("output/joint_SDOU_validation/simDiscOnly_anc_states_marginal.log"),
+#                   state_labels=c("0"="Browsers",
+#                                  "1"="Mixed feeders",
+#                                  "2"="Grazers"))
+#tb_simDiscOnly <- read.table(paste0("output/joint_SDOU_validation/simDiscOnly_charhist.log"), header = TRUE)
+#simmap_simDiscOnly <- read.simmap(text=tb_simDiscOnly$char_hist, format = "phylip")
+#processed_simDiscOnly <- processStochMaps(tree=tree, simmap = simmap_simDiscOnly,
+#                                         states = c("0", "1", "2"))
+#colnames(processed_simDiscOnly)[6] = "Browsers"
+#colnames(processed_simDiscOnly)[7] = "Mixed feeders"
+#colnames(processed_simDiscOnly)[8] = "Grazers"
+#
+#p11 <- plotAncStatesPie(t = ase_simDiscOnly ,
+#                       pie_colors = c("Browsers"="#CC6677",
+#                                      "Mixed feeders"="#44AA99",
+#                                      "Grazers"="#ddcc77"),
+#                       tip_labels = FALSE,
+#                       tip_pies = TRUE,
+#                       node_pie_size = 2,
+#                       tip_pie_size = 2,
+#                       tree_layout = "rectangular",
+#                       state_transparency = 0.9,
+#                       tree_linewidth = 0.75) +
+#  theme(legend.position = "none")
+#p12 <- plotStochMaps(tree=tree, maps = processed_simDiscOnly, color_by = "MAP",
+#                    colors = c("Browsers"="#CC6677",
+#                               "Mixed feeders"="#44aa99",
+#                               "Grazers"="#ddcc77"
+#                    ),
+#                    tip_labels = FALSE
+#) +
+#  theme(legend.position = "none")
+#
+#
+#ase_simDiscCont <-
+#  processAncStates(paste0("output/joint_SDOU_validation/simDiscCont_anc_states_marginal.log"),
+#                   state_labels=c("0"="Browsers",
+#                                  "1"="Mixed feeders",
+#                                  "2"="Grazers"))
+#tb_simDiscCont <- read.table(paste0("output/joint_SDOU_validation/simDiscCont_charhist.log"), header = TRUE)
+#simmap_simDiscCont <- read.simmap(text=tb_simDiscCont$char_hist, format = "phylip")
+#processed_simDiscCont <- processStochMaps(tree=tree, simmap = simmap_simDiscCont,
+#                                         states = c("0", "1", "2"))
+#colnames(processed_simDiscCont)[6] = "Browsers"
+#colnames(processed_simDiscCont)[7] = "Mixed feeders"
+#colnames(processed_simDiscCont)[8] = "Grazers"
+#
+#p13 <- plotAncStatesPie(t = ase_simDiscCont ,
+#                       pie_colors = c("Browsers"="#CC6677",
+#                                      "Mixed feeders"="#44AA99",
+#                                      "Grazers"="#ddcc77"),
+#                       tip_labels = FALSE,
+#                       tip_pies = TRUE,
+#                       node_pie_size = 2,
+#                       tip_pie_size = 2,
+#                       tree_layout = "rectangular",
+#                       state_transparency = 0.9,
+#                       tree_linewidth = 0.75) +
+#  theme(legend.position = "none")
+#p14 <- plotStochMaps(tree=tree, maps = processed_simDiscCont, color_by = "MAP",
+#                     colors = c("Browsers"="#CC6677",
+#                                "Mixed feeders"="#44aa99",
+#                                "Grazers"="#ddcc77"
+#                     ),
+#                     tip_labels = FALSE
+#) +
+#  theme(legend.position = "none")
+#
+#
+#plot_row1 <- plot_grid(p0g, p0w2, p0g,
+#                       rel_widths=c(0.98,0.08,2.94), ncol=3) +
+#  draw_plot_label(label=c("Stochastic mapping",
+#                          "State-dependent OU model"),
+#                  x=c(0.49/4, (0.49*5+0.08)/4),
+#                  y=0.5,
+#                  hjust=.5, vjust=.5, size=12)
+#plot_row2 <- plot_grid(p0w, p0w2, p0w, p0w, p0w,
+#                       rel_widths=c(0.98,0.08,0.98,0.98,0.98), ncol=5) +
+#  draw_plot_label(label=c("No continuous character",
+#                          "Continuous character\nsimulated under MAP history\nfrom stochastic mapping",
+#                          "Empirical continuous character",
+#                          "Continuous character\nsimulated under MAP history\nfrom the SD-OU model"),
+#                  x=c(0.49/4,
+#                      (0.49*3+0.08)/4,
+#                      (0.49*5+0.08)/4,
+#                      (0.49*7+0.08)/4),
+#                  y=0.5,
+#                  hjust=.5, vjust=.5, size=8)
+#
+#plot_row34 <- plot_grid(p1, p0w2, p11, p5, p13, p2, p0w2, p12, p6, p14,
+#                        rel_widths=c(0.98,0.08,0.98,0.98,0.98), ncol=5)
+#plot_sims <- plot_grid(plot_row1, plot_row2, plot_row34,
+#                         rel_heights = c(1,1.5,12), ncol=1)
+#
+#
+#
+#
+#
+#plot_sims
+#ggsave("figures/case_study_maps_sims.pdf", plot_sims, width=7.5, height=6, units="in")
 
-p11 <- plotAncStatesPie(t = ase_simDiscOnly ,
-                       pie_colors = c("Browsers"="#CC6677",
-                                      "Mixed feeders"="#44AA99",
-                                      "Grazers"="#ddcc77"),
-                       tip_labels = FALSE,
-                       tip_pies = TRUE,
-                       node_pie_size = 2,
-                       tip_pie_size = 2,
-                       tree_layout = "rectangular",
-                       state_transparency = 0.9,
-                       tree_linewidth = 0.75) +
-  theme(legend.position = "none")
-p12 <- plotStochMaps(tree=tree, maps = processed_simDiscOnly, color_by = "MAP",
-                    colors = c("Browsers"="#CC6677",
-                               "Mixed feeders"="#44aa99",
-                               "Grazers"="#ddcc77"
-                    ),
-                    tip_labels = FALSE
-) +
-  theme(legend.position = "none")
+########################################
+# x-y plot for MAP state probabilities #
+########################################
+ntip <- length(t$tip.label)
+df_scm   <- ase_MAP@data[-(1:ntip),]
+df_da <- ase_da@data[-(1:ntip),]
+df_joint <- ase_joint@data[-(1:ntip),]
+df_large_alpha <- ase_largeAlpha@data[-(1:ntip),]
+df_small_alpha <- ase_smallAlpha@data[-(1:ntip),]
+# check if all MAP states are the same
+if (!identical(df_scm$anc_state_1,df_joint$anc_state_1)){
+  cat("some MAP states are different! Proceed with plotting is not recommended.")
+} else {
+  cat("Good to go.")
+}
 
 
-ase_simDiscCont <-
-  processAncStates(paste0("output/joint_SDOU_validation/simDiscCont_anc_states_marginal.log"),
-                   state_labels=c("0"="Browsers",
-                                  "1"="Mixed feeders",
-                                  "2"="Grazers"))
-tb_simDiscCont <- read.table(paste0("output/joint_SDOU_validation/simDiscCont_charhist.log"), header = TRUE)
-simmap_simDiscCont <- read.simmap(text=tb_simDiscCont$char_hist, format = "phylip")
-processed_simDiscCont <- processStochMaps(tree=tree, simmap = simmap_simDiscCont,
-                                         states = c("0", "1", "2"))
-colnames(processed_simDiscCont)[6] = "Browsers"
-colnames(processed_simDiscCont)[7] = "Mixed feeders"
-colnames(processed_simDiscCont)[8] = "Grazers"
-
-p13 <- plotAncStatesPie(t = ase_simDiscCont ,
-                       pie_colors = c("Browsers"="#CC6677",
-                                      "Mixed feeders"="#44AA99",
-                                      "Grazers"="#ddcc77"),
-                       tip_labels = FALSE,
-                       tip_pies = TRUE,
-                       node_pie_size = 2,
-                       tip_pie_size = 2,
-                       tree_layout = "rectangular",
-                       state_transparency = 0.9,
-                       tree_linewidth = 0.75) +
-  theme(legend.position = "none")
-p14 <- plotStochMaps(tree=tree, maps = processed_simDiscCont, color_by = "MAP",
-                     colors = c("Browsers"="#CC6677",
-                                "Mixed feeders"="#44aa99",
-                                "Grazers"="#ddcc77"
-                     ),
-                     tip_labels = FALSE
-) +
-  theme(legend.position = "none")
 
 
-plot_row1 <- plot_grid(p0g, p0w2, p0g,
-                       rel_widths=c(0.98,0.08,2.94), ncol=3) +
-  draw_plot_label(label=c("Stochastic mapping",
-                          "State-dependent OU model"),
-                  x=c(0.49/4, (0.49*5+0.08)/4),
+
+df_compare        <- tibble(.rows=nrow(df_scm))
+df_compare$state  <- df_scm$anc_state_1
+df_compare$scm_pp <- as.numeric(df_scm$anc_state_1_pp)
+df_compare$da_pp  <- as.numeric(df_da$anc_state_1_pp)
+df_compare$largeAlpha_pp  <- as.numeric(df_large_alpha$anc_state_1_pp)
+df_compare$smallAlpha_pp  <- as.numeric(df_small_alpha$anc_state_1_pp)
+df_compare$joint_pp <- as.numeric(df_joint$anc_state_1_pp)
+df_compare$diff_scm_da   <- ifelse(abs(df_compare$scm_pp-df_compare$da_pp) > 0.05, "Y", "N")
+df_compare$diff_scm_largeAlpha   <- ifelse(abs(df_compare$scm_pp-df_compare$largeAlpha_pp) > 0.05, "Y", "N")
+df_compare$diff_scm_joint <- ifelse(abs(df_compare$scm_pp-df_compare$joint_pp) > 0.05, "Y", "N")
+df_compare$diff_scm_smallAlpha <- ifelse(abs(df_compare$scm_pp-df_compare$smallAlpha_pp) > 0.05, "Y", "N")
+df_compare$diff_joint_smallAlpha <- ifelse(abs(df_compare$joint_pp-df_compare$smallAlpha_pp) > 0.05, "Y", "N")
+df_compare$diff_joint_largeAlpha <- ifelse(abs(df_compare$joint_pp-df_compare$largeAlpha_pp) > 0.05, "Y", "N")
+
+
+p_compare_joint <- df_compare %>%
+  ggplot() +
+  geom_abline(intercept = 0, slope = 1, linetype="dashed") +
+  geom_point(aes(x=scm_pp, y=joint_pp, colour = diff_scm_joint), alpha=0.8) +
+  theme_classic() +
+  scale_x_continuous(breaks=c(0.6, 0.7, 0.8, 0.9, 1)) +
+  scale_y_continuous(breaks=c(0.6, 0.7, 0.8, 0.9, 1)) +
+  scale_color_manual(values = c("Y"="darkred", "N"="black")) +
+  #scale_shape_manual(values = c("Y"=16, "N"=1))
+  #xlab("Stochastic mapping") +
+  #ylab(TeX("SD-OU (estimated $\\alpha$)")) +
+  theme(legend.position = "none",
+        axis.title = element_blank()) +
+  coord_cartesian(xlim=c(0.6, 1), ylim=c(0.6,1))
+
+p_compare_da <- df_compare %>%
+  ggplot() +
+  geom_abline(intercept = 0, slope = 1, linetype="dashed") +
+  geom_point(aes(x=scm_pp, y=da_pp, colour = diff_scm_da), alpha=0.8) +
+  theme_classic() +
+  scale_x_continuous(breaks=c(0.6, 0.7, 0.8, 0.9, 1)) +
+  scale_y_continuous(breaks=c(0.6, 0.7, 0.8, 0.9, 1)) +
+  scale_color_manual(values = c("Y"="darkred", "N"="black")) +
+  #scale_shape_manual(values = c("Y"=16, "N"=1))
+  #xlab("Stochastic mapping") +
+  #ylab("Data augmentation") +
+  theme(legend.position = "none",
+        axis.title = element_blank()) +
+  coord_cartesian(xlim=c(0.6, 1), ylim=c(0.6,1))
+
+p_compare_largeAlpha <- df_compare %>%
+  ggplot() +
+  geom_abline(intercept = 0, slope = 1, linetype="dashed") +
+  geom_point(aes(x=scm_pp, y=largeAlpha_pp, colour = diff_scm_largeAlpha), alpha=0.8) +
+  theme_classic() +
+  scale_x_continuous(breaks=c(0.6, 0.7, 0.8, 0.9, 1)) +
+  scale_y_continuous(breaks=c(0.6, 0.7, 0.8, 0.9, 1)) +
+  scale_color_manual(values = c("Y"="darkred", "N"="black")) +
+  #scale_shape_manual(values = c("Y"=16, "N"=1))
+  #xlab("Stochastic mapping") +
+  #ylab(TeX("SD-OU (large $\\alpha$)")) +
+  theme(legend.position = "none",
+        axis.title = element_blank()) +
+  coord_cartesian(xlim=c(0.6, 1), ylim=c(0.6,1))
+
+p_compare_smallAlpha <- df_compare %>%
+  ggplot() +
+  geom_abline(intercept = 0, slope = 1, linetype="dashed") +
+  geom_point(aes(x=scm_pp, y=smallAlpha_pp, colour = diff_scm_smallAlpha), alpha=0.8) +
+  theme_classic() +
+  scale_x_continuous(breaks=c(0.6, 0.7, 0.8, 0.9, 1)) +
+  scale_y_continuous(breaks=c(0.6, 0.7, 0.8, 0.9, 1)) +
+  scale_color_manual(values = c("Y"="darkred", "N"="black")) +
+  #scale_shape_manual(values = c("Y"=16, "N"=1))
+  #xlab("Stochastic mapping") +
+  #ylab(TeX("SD-OU (small $\\alpha$)")) +
+  theme(legend.position = "none",
+        axis.title = element_blank()) +
+  coord_cartesian(xlim=c(0.6, 1), ylim=c(0.6,1))
+
+
+
+legend <- get_legend2(p_compare_smallAlpha + theme(legend.position = "right",
+                                                   legend.title = element_blank(),
+                                         legend.box.margin = margin(0, 0, 0, 12)) +
+                        scale_fill_manual(labels = c(TeX("\\Delta pp \\leq 0.05"), TeX("\\Delta pp > 0.05")), values = c("black", "darkred")) +
+                        scale_color_manual(labels = c(TeX("\\Delta pp \\leq 0.05"), TeX("\\Delta pp > 0.05")), values = c("black", "darkred")) +
+                        guides(color = guide_legend(override.aes = list(alpha = 0.8)),
+                               fill = guide_legend(override.aes = list(alpha = 0.8))))
+
+p_first_row <- plot_grid(p0g, p0w2, p0g,
+                       rel_widths=c(0.98, 0.08, 0.98*3), ncol=3) +
+  draw_plot_label(label=c("Discrete only",
+                          "Discrete + Continuous"),
+                  x=c(0.49/4,
+                      (0.49*5+0.08)/4),
                   y=0.5,
-                  hjust=.5, vjust=.5, size=12)
-plot_row2 <- plot_grid(p0w, p0w2, p0w, p0w, p0w,
-                       rel_widths=c(0.98,0.08,0.98,0.98,0.98), ncol=5) +
-  draw_plot_label(label=c("No continuous character",
-                          "Continuous character\nsimulated under MAP history\nfrom stochastic mapping",
-                          "Empirical continuous character",
-                          "Continuous character\nsimulated under MAP history\nfrom the SD-OU model"),
+                  hjust=.5, vjust=.5, size=10)
+
+p_second_row <- plot_grid(p0w, p0w2, p0w, p0w, p0w,
+                          rel_widths=c(0.98, 0.08, 0.98, 0.98, 0.98), ncol=5) +
+  draw_plot_label(label=c("Data augmentation",
+                          "SD-OU (small alpha)",
+                          "SD-OU (est. alpha)",
+                          "SD-OU (large alpha)"),
                   x=c(0.49/4,
                       (0.49*3+0.08)/4,
                       (0.49*5+0.08)/4,
                       (0.49*7+0.08)/4),
                   y=0.5,
                   hjust=.5, vjust=.5, size=8)
-
-plot_row34 <- plot_grid(p1, p0w2, p11, p5, p13, p2, p0w2, p12, p6, p14,
-                        rel_widths=c(0.98,0.08,0.98,0.98,0.98), ncol=5)
-plot_sims <- plot_grid(plot_row1, plot_row2, plot_row34,
-                         rel_heights = c(1,1.5,12), ncol=1)
-
-
-
-
-
-plot_sims
-ggsave("figures/case_study_maps_sims.pdf", plot_sims, width=7.5, height=6, units="in")
+p_third_row <- plot_grid(p_compare_da, p0w2, p_compare_smallAlpha,
+                           p_compare_joint, p_compare_largeAlpha,
+                           rel_widths=c(0.98, 0.08, 0.98, 0.98, 0.98), ncol=5)
+p_first_col <- plot_grid(p_first_row, p_second_row, p_third_row,
+                         rel_heights=c(1,1,4), ncol=1)
+p_second_col <- plot_grid(p0w2, legend,
+                          rel_heights=c(2,4), ncol=1)
+p_compare_scm <- plot_grid(p_first_col, p_second_col,
+                           rel_widths=c(5,1), ncol=2)
 
 
+ggsave("figures/case_study_node_posterior_cf_scm.pdf", p_compare_scm, width = 7.6, height = 2.65, units = "in")
 
+
+
+p_compare_joint_smallAlpha <- df_compare %>%
+  ggplot() +
+  geom_abline(intercept = 0, slope = 1, linetype="dashed") +
+  geom_point(aes(x=joint_pp, y=smallAlpha_pp, colour = diff_joint_smallAlpha), alpha=0.8) +
+  theme_classic() +
+  scale_x_continuous(breaks=c(0.6, 0.7, 0.8, 0.9, 1)) +
+  scale_y_continuous(breaks=c(0.6, 0.7, 0.8, 0.9, 1)) +
+  scale_color_manual(values = c("Y"="darkred", "N"="black")) +
+  #scale_shape_manual(values = c("Y"=16, "N"=1))
+  #xlab(TeX("SD-OU (estimated $\\alpha$)")) +
+  #ylab(TeX("SD-OU (small $\\alpha$)")) +
+  theme(legend.position = "none",
+        axis.title = element_blank()) +
+  coord_cartesian(xlim=c(0.6, 1), ylim=c(0.6,1))
+
+p_compare_joint_largeAlpha <- df_compare %>%
+  ggplot() +
+  geom_abline(intercept = 0, slope = 1, linetype="dashed") +
+  geom_point(aes(x=joint_pp, y=largeAlpha_pp, colour = diff_joint_largeAlpha), alpha=0.8) +
+  theme_classic() +
+  scale_x_continuous(breaks=c(0.6, 0.7, 0.8, 0.9, 1)) +
+  scale_y_continuous(breaks=c(0.6, 0.7, 0.8, 0.9, 1)) +
+  scale_color_manual(values = c("Y"="darkred", "N"="black")) +
+  #scale_shape_manual(values = c("Y"=16, "N"=1))
+  #xlab(TeX("SD-OU (estimated $\\alpha$)")) +
+  #ylab(TeX("SD-OU (large $\\alpha$)")) +
+  theme(legend.position = "none",
+        axis.title = element_blank()) +
+  coord_cartesian(xlim=c(0.6, 1), ylim=c(0.6,1))
+
+
+
+p_first_row <- plot_grid(p0w, p0w, ncol=2) +
+  draw_plot_label(label=c("SD-OU (small alpha)",
+                          "SD-OU (large alpha)"),
+                  x=c(0.25, 0.75),
+                  y=0.5,
+                  hjust=.5, vjust=.5, size=8)
+
+p_second_row <- plot_grid(p_compare_joint_smallAlpha, p_compare_joint_largeAlpha, ncol=2)
+
+
+p_first_col <- plot_grid(p_first_row, p_second_row,
+                           rel_heights=c(1,4), ncol=1)
+p_second_col <- plot_grid(p0w2, legend,
+                          rel_heights=c(1,4), ncol=1)
+p_compare_joint <- plot_grid(p_first_col, p_second_col,
+                             rel_widths=c(3.1,1), ncol=2)
+
+ggsave("figures/case_study_node_posterior_cf_joint.pdf", p_compare_joint, width = 5, height = 2.5, units = "in")
 

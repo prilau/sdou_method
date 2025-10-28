@@ -85,7 +85,7 @@ sigma2[1] ~ dnLognormal(ln(vy), 0.587405)
 moves.append(mvScale(sigma2[1], weight = 1.0) )
 avmvn_cont.addVariable(sigma2[1])
 
-theta[1] ~ dnUniform(3, 7)
+theta[1] ~ dnUniform(0.5, 8)
 avmvn_cont.addVariable(theta[1])
 moves.append(mvSlide(theta[1], weight = 1.0) )
 

@@ -31,8 +31,8 @@ processValidation <- function(analysis_name, n_reps = 1000, n_bins = 50) {
   parameters <- parameters[-1]   # remove the first column ("Iteration")
   
   # exclude "branch_rates" if present 
-  parameters <- parameters[!(parameters %in% c("rf", "rates", "branch_rates"))]
-  
+  #parameters <- parameters[!(parameters %in% c("rf", "rates", "branch_rates"))]
+
   # Print list of parameters 
   cat("parameters:\n", parameters, "\n\n")
   

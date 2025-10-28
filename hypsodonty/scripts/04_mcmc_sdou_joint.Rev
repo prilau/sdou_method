@@ -1,0 +1,164 @@
+################################################################################
+#
+# RevBayes Example: Testing hidden rates for state-dependent OU model
+#
+# authors: Priscilla Lau
+#
+################################################################################
+
+#RUN_INDEX <- args[1]
+#out_dir <- args[2]
+#tree_data <- args[3]
+#disc_data <- args[4]
+#cont_data <- args[5]
+#RUN_INDEX <- 2
+out_dir <- "output/sdou_joint/"
+tree_data <- "data/artiodactyla_rescaled.tree"
+disc_data <- "data/artiodactyla_Discrete.nex"
+cont_data <- "data/artiodactyla_Continuous.nex"
+
+#######################
+# Reading in the Data #
+#######################
+
+### Select the character to analyze
+characterDisc <- 1
+characterCont <- 1
+
+### Read in the tree
+tree <- readTrees( tree_data )[1]
+ntips <- tree.ntips()
+nbranches <- 2 * ntips - 2
+
+disc <- readDiscreteCharacterData( disc_data )
+
+disc.excludeAll()
+disc.includeCharacter(characterDisc)
+num_disc_states <- disc.getStateDescriptions().size()
+
+cont <- readContinuousCharacterData( cont_data )
+cont.excludeAll()
+cont.includeCharacter(characterCont)
+
+# Create some vector for the moves and monitors of this analysis
+moves    = VectorMoves()
+monitors = VectorMonitors()
+avmvn_disc = mvAVMVN(weight=20, waitBeforeLearning=500, waitBeforeUsing=1000)
+avmvn_cont = mvAVMVN(weight=50, waitBeforeLearning=500, waitBeforeUsing=1000)
+
+########################################
+# Specify the discrete-character model #
+########################################
+
+# make the Q matrix
+# make the Q matrix
+
+#allowed_rates ~ dnDirichlet(rep(1, 4)*10)
+#moves.append( mvBetaSimplex( allowed_rates, weight=2 ) )
+#moves.append( mvDirichletSimplex( allowed_rates, weight=2 ) )
+#avmvn.addVariable( allowed_rates )
+
+#all_rates := [ allowed_rates[1], 0, allowed_rates[2], allowed_rates[3], 0, allowed_rates[4] ]
+all_rates <- [ 1, 0, 1, 1, 0, 1 ]
+
+lambda ~ dnLognormal(ln(0.05), 0.4)
+moves.append( mvScale(lambda, weight=1.0) )
+avmvn_disc.addVariable(lambda)
+
+Q := fnFreeK(lambda*all_rates, rescaled=FALSE)
+
+# set root prior
+
+#rf_prior <- rep(1,num_disc_states)
+#rf ~ dnDirichlet( rf_prior )
+#moves.append( mvBetaSimplex( rf, weight=2 ) )
+#moves.append( mvDirichletSimplex( rf, weight=2 ) )
+#avmvn.addVariable( rf )
+rf <- simplex( rep( 1/3, 3 ) )
+moves.append( avmvn_disc )
+
+
+X ~ dnPhyloCTMCDASiteIID(tree, Q, branchRates=1, type="Standard")
+X.clamp(disc)
+
+# include proposals for the discrete character history
+moves.append( mvCharacterHistory(ctmc=X, qmap_site=Q, graph="node",   proposal="rejection", weight=800.0) )
+moves.append( mvCharacterHistory(ctmc=X, qmap_site=Q, graph="branch", proposal="rejection", weight=200.0) )
+
+# keep track of the number of transitions
+for(i in 1:nbranches) {
+    num_changes[i] := sum(X.numCharacterChanges(i))
+}
+total_num_changes := sum(num_changes)
+
+char_hist := X.characterHistories()
+
+##############################
+# continuous character model #
+##############################
+
+
+root_age <- tree.rootAge()
+min <- 0.5
+max <- 8.0
+buffer <- 0
+Vy <- cont.var(characterCont)
+
+
+for (i in 1:num_disc_states){
+  theta[i] ~ dnUniform(min-buffer, max+buffer)
+  moves.append(mvSlide(theta[i], weight = 1.0) )
+  avmvn_cont.addVariable(theta[i])
+
+  a <- ln(2) / root_age
+
+  alpha[i] ~ dnLognormal(ln(a), 0.587405)
+  moves.append(mvScale(alpha[i], weight = 1.0) )
+  avmvn_cont.addVariable(alpha[i])
+
+  s <- Vy * 2 * a
+  sigma2[i] ~ dnLognormal(ln(s), 0.587405)
+  moves.append(mvScale(sigma2[i], weight = 1.0) )
+  avmvn_cont.addVariable(sigma2[i])
+
+}
+
+
+moves.append( avmvn_cont )
+
+##########################
+# Specify the OU process #
+##########################
+
+Y ~ dnPhyloOUSD(char_hist, theta=theta, rootTreatment="optimum", alpha=alpha, sigma=sigma2^0.5)
+Y.clamp(cont)
+
+#############
+# The Model #
+#############
+
+mymodel = model(Y)
+
+#monitors.append( mnModel(filename=out_dir + "trace_run_" + RUN_INDEX + ".log", printgen=10) )
+monitors.append( mnModel(filename=out_dir + "trace.log", printgen=10) )
+monitors.append( mnScreen(printgen=100) )
+#monitors.append( mnFile( char_hist, filename=out_dir + "charhist_run_" + RUN_INDEX + ".log", printgen=10 ) )
+monitors.append( mnFile( char_hist, filename=out_dir + "charhist.log", printgen=10 ) )
+
+
+################
+# The Analysis #
+################
+
+### workspace mcmc ###
+mymcmc = mcmc(mymodel, monitors, moves, nruns=2, combine="mixed")
+
+
+### run the MCMC ###
+mymcmc.burnin(generations=10000, tuningInterval=200)
+#mymcmc.initializeFromCheckpoint(out_dir + "sdou_joint_checkpoint.state")
+mymcmc.run(generations=100000, tuningInterval=200, checkpointInterval = 10, checkpointFile = out_dir + "sdou_joint_checkpoint.state")
+mymcmc.operatorSummary()
+
+## quit ##
+q()

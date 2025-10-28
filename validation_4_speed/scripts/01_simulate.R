@@ -3,11 +3,11 @@ library(phytools)
 library(pracma)
 library(tidyverse)
 library(TESS)
-source("../utility//functions.R")
+source("../utility/functions.R")
 
 
 # simulate trees of different sizes
-num_tips   = c(1e2, 2e2, 5e2, 1e3, 5e3, 1e4, 1e5)
+num_tips   = c(5e2, 1e3, 5e3, 1e4, 2.5e4, 5e4, 1e5)
 reps       = 10
 
 grid = expand.grid(tree=1:reps, num_tips=num_tips,
@@ -43,7 +43,7 @@ for(i in 1:nrow(grid)) {
 }
 
 # simulate discrete character histories
-grid$expected_num_changes <- grid$num_tips / 20
+grid$expected_num_changes <- ( grid$num_tips * 2 - 2 ) / 100
 
 Q = matrix(1, 2, 2)
 diag(Q) = -1
@@ -61,17 +61,36 @@ for(i in 1:nrow(grid)) {
   this_dir = paste0("data/n_", this_num_tip)
   
   tree <- read.tree(paste0(this_dir, "/trees/t", this_tree, ".tree"))
-  cat("successfully read tree.\n")
+  cat("\nSuccessfully read tree", this_tree, "with", this_num_tip, "taxa.\n")
   
   tree_length = sum(tree$edge.length)
   rate = this_num_change / tree_length
   
   
   cat("simulating character history.\n")
-  history = sim.history(tree, rate * Q, nsim=10, message=FALSE)
-  for (j in 1:10){
-    write.simmap(history[[j]], file = paste0(this_dir, "/character_histories/t", this_tree, "_charhist_", j, ".tree"))
+  if (file.exists(paste0(this_dir, "/character_histories/t", this_tree, "_charhist.trees"))){
+    file.remove(paste0(this_dir, "/character_histories/t", this_tree, "_charhist.trees"))
+    file.create(paste0(this_dir, "/character_histories/t", this_tree, "_charhist.trees"))
   }
+  else {
+    
+  }
+
+  outFile <- file(paste0(this_dir, "/character_histories/t", this_tree, "_charhist.trees"), "w")
+  close(outFile)
+  history = sim.history(tree, rate * Q, nsim=10, message=FALSE)
+  cat("writing character history.\n")
+  for (j in 1:10){
+    write.simmap(history[[j]],
+                 file = paste0(this_dir, "/character_histories/t", this_tree, "_charhist_temp.trees"),
+                 map.order = "right-to-left")
+    outFile <- file(paste0(this_dir, "/character_histories/t", this_tree, "_charhist.trees"), "a")
+    x <- readLines(paste0(this_dir, "/character_histories/t", this_tree, "_charhist_temp.trees"))
+    writeLines(x, outFile)
+    close(outFile)
+  }
+  file.remove(paste0(this_dir, "/character_histories/t", this_tree, "_charhist_temp.trees"))
+  
   
   setTxtProgressBar(bar, i / nrow(grid))
 
@@ -81,7 +100,7 @@ for(i in 1:nrow(grid)) {
 # simulate continuous traits: one for each tree size
 for(i in num_tips) {
   this_dir = paste0("data/n_", i)
-  cont <- rnorm(i, mean=0, sd=4)
+  cont <- rnorm(i, mean=0, sd=1)
   cont_list <- list()
   for (j in 1:i){
     tip <- paste0("t", j)

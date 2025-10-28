@@ -104,7 +104,7 @@ mymodel = model(Y)
 
 ### set up the monitors that will output parameter values to file and screen
 monitors.append( mnModel(filename="output/3a_state_dependent_BM.log", printgen=10) )
-#monitors.append( mnScreen(printgen=1000, sigma2s) )
+#monitors.append( mnScreen(printgen=1000, sigma2) )
 
 
 ################

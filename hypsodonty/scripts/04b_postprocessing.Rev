@@ -1,0 +1,19 @@
+tree <- readTrees("data/artiodactyla_rescaled.tree")[1]
+
+anc_states = readAncestralStateTrace("output/sdou_joint/anc_states.log")
+
+anc_tree = ancestralStateTree(
+  tree=tree,
+  ancestral_state_trace_vector=anc_states,
+  include_start_states=false,
+  file="output/sdou_joint/anc_states_marginal.log",
+  summary_statistic="MAP",
+  reconstruction="marginal",
+  burnin=0.0,
+  nStates=3,
+  site=1)
+
+#for (i in 1:2){
+#    file="output/sdou_joint/anc_states_marginal_run_" + i + ".log",
+#}
+q()

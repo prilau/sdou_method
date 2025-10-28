@@ -80,17 +80,18 @@ char_hist := X.characterHistories()
 # Specify the rate model #
 ##########################
 
-vy <- cont.var(characterCont)
-sigma2[1] ~ dnLognormal(ln(vy), 0.587405)
-moves.append(mvScale(sigma2[1], weight = 1.0) )
-avmvn_cont.addVariable(sigma2[1])
-
-theta[1] ~ dnUniform(3, 7)
+theta[1] ~ dnUniform(0.5, 8)
 avmvn_cont.addVariable(theta[1])
 
 a <- ln(2) / root_age
 alpha[1] ~ dnLognormal( ln(a), 0.587405 )
 avmvn_cont.addVariable(alpha[1])
+
+vy <- cont.var(characterCont)
+s <- vy * 2 * a
+sigma2[1] ~ dnLognormal(ln(s), 0.587405)
+moves.append(mvScale(sigma2[1], weight = 1.0) )
+avmvn_cont.addVariable(sigma2[1])
 
 moves.append(mvScale(sigma2[1], weight = 1.0) )
 moves.append(mvScale(alpha[1], weight = 1.0) )

@@ -5,4 +5,5 @@
 history.txt
 **/*.log
 **/output
+validation_4_speed/data
 **/figures

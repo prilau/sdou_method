@@ -1,0 +1,106 @@
+################################################################################
+#
+# RevBayes Example: Testing hidden rates for state-dependent OU model
+#
+# authors: Priscilla Lau
+#
+################################################################################
+
+#RUN_INDEX <- args[1]
+#out_dir <- args[2]
+#tree_data <- args[3]
+#char_hist <- args[4]
+#cont_data <- args[5]
+#HIST_INDEX <- args[6]
+
+#RUN_INDEX <- 1
+out_dir <- "output/sdou_seq/"
+tree_data <- "data/artiodactyla_rescaled.tree"
+hist_data <- "output/ase_SCM/r100.trees"
+cont_data <- "data/artiodactyla_Continuous.nex"
+#######################
+# Reading in the Data #
+#######################
+tree <- readTrees( tree_data )[1]
+root_age <- tree.rootAge()
+
+characterCont <- 1
+cont <- readContinuousCharacterData( cont_data )
+cont.excludeAll()
+cont.includeCharacter(characterCont)
+
+### Read in the tree
+all_hist = readCharacterHistory( hist_data )
+
+for (HIST_INDEX in 1:100){
+    char_hist <- all_hist[HIST_INDEX]
+    # Create some vector for the moves and monitors of this analysis
+    moves    = VectorMoves()
+    monitors = VectorMonitors()
+    avmvn = mvAVMVN(weight=50, waitBeforeLearning=500, waitBeforeUsing=1000)
+
+    ##############################
+    # continuous character model #
+    ##############################
+
+    min <- 0.5
+    max <- 8.0
+
+    buffer <- 0
+    Vy <- cont.var(characterCont)
+
+    for (i in 1:3){
+      theta[i] ~ dnUniform(min-buffer, max+buffer)
+      moves.append(mvSlide(theta[i], weight = 1.0) )
+      avmvn.addVariable(theta[i])
+
+      a <- ln(2)/root_age
+
+      alpha[i] ~ dnLognormal(ln(a), 0.587405)
+      moves.append(mvScale(alpha[i], weight = 1.0) )
+      avmvn.addVariable(alpha[i])
+
+      s <- Vy * 2 * a
+      sigma2[i] ~ dnLognormal(ln(s), 0.587405)
+      moves.append(mvScale(sigma2[i], weight = 1.0) )
+      avmvn.addVariable(sigma2[i])
+    }
+
+    moves.append( avmvn )
+
+    ##########################
+    # Specify the OU process #
+    ##########################
+
+    Y ~ dnPhyloOUSD(char_hist, theta=theta, rootTreatment="optimum", alpha=alpha, sigma=sigma2^0.5)
+    Y.clamp(cont)
+
+    #############
+    # The Model #
+    #############
+
+    mymodel = model(Y)
+
+    #monitors.append( mnModel(filename=out_dir + "trace_r100_" + HIST_INDEX + "_run_" + RUN_INDEX + ".log", printgen=10) )
+    monitors.append( mnModel(filename=out_dir + "trace_r100_" + HIST_INDEX + ".log", printgen=10) )
+    monitors.append( mnScreen(printgen=1000) )
+
+    ################
+    # The Analysis #
+    ################
+
+    ### workspace mcmc ###
+    mymcmc = mcmc(mymodel, monitors, moves, nruns=2, combine="mixed")
+
+
+    ### run the MCMC ###
+    mymcmc.burnin(generations=2000, tuningInterval=200) # comment out after first run
+
+    mymcmc.run(generations=20000, tuningInterval=200)
+}
+
+
+
+
+## quit ##
+q()

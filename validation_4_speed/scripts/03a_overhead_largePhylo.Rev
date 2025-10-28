@@ -1,0 +1,211 @@
+###############################################
+# RevBayes Example: Testing alogirithm speed
+#
+#
+# authors: Priscilla Lau
+#
+################################################
+
+##########################
+# constant OU parameters #
+##########################
+
+alpha[1] <- abs(1.0)
+alpha[2] <- abs(2.0)
+sigma2[1] <- abs(1.0)
+sigma2[2] <- abs(2.0)
+theta[1] <- 1.0
+theta[2] <- -1.0
+
+#############
+# 50 k taxa #
+#############
+
+i <- "50000"
+cont <- readContinuousCharacterData("data/n_" + i + "/Continuous.nex")
+cont.excludeAll()
+cont.includeCharacter(1)
+
+for (j in 1:10){
+  for (k in 1:10){
+    char_hist = readCharacterHistory("data/n_" + i + "/character_histories/t" + j + "_charhist.trees")[k]
+    Y ~ dnPhyloOUSD(char_hist, theta=theta, rootTreatment="optimum", alpha=alpha, sigma=sigma2^0.5)
+    Y.clamp(cont)
+
+    time_tmp[1] <- time("nanoseconds")
+    for (m in 1:100){
+      Y.lnProbability()
+    }
+    time_tmp[2] <- time("nanoseconds")
+    n <- ( j - 1 ) * 10 + k
+    time[n] <- ( time_tmp[2] - time_tmp[1] ) / 100
+  }
+}
+write(time, filename="output/n_" + i + "_per_rep_time_overhead.txt", separator=",")
+
+
+
+##############
+# 100 k taxa #
+##############
+i <- "1e+05"
+cont <- readContinuousCharacterData("data/n_" + i + "/Continuous.nex")
+cont.excludeAll()
+cont.includeCharacter(1)
+
+j=1
+for (k in 1:10){
+  char_hist = readCharacterHistory("data/n_" + i + "/character_histories/t" + j + "_charhist.trees")[k]
+  Y ~ dnPhyloOUSD(char_hist, theta=theta, rootTreatment="optimum", alpha=alpha, sigma=sigma2^0.5)
+  Y.clamp(cont)
+
+  time_tmp[1] <- time("nanoseconds")
+  for (m in 1:100){
+    Y.lnProbability()
+  }
+  time_tmp[2] <- time("nanoseconds")
+  n <- ( j - 1 ) * 10 + k
+  time[n] <- ( time_tmp[2] - time_tmp[1] ) / 100
+}
+
+j+=1
+for (k in 1:10){
+  char_hist = readCharacterHistory("data/n_" + i + "/character_histories/t" + j + "_charhist.trees")[k]
+  Y ~ dnPhyloOUSD(char_hist, theta=theta, rootTreatment="optimum", alpha=alpha, sigma=sigma2^0.5)
+  Y.clamp(cont)
+
+  time_tmp[1] <- time("nanoseconds")
+  for (m in 1:100){
+    Y.lnProbability()
+  }
+  time_tmp[2] <- time("nanoseconds")
+  n <- ( j - 1 ) * 10 + k
+  time[n] <- ( time_tmp[2] - time_tmp[1] ) / 100
+}
+
+j+=1
+for (k in 1:10){
+  char_hist = readCharacterHistory("data/n_" + i + "/character_histories/t" + j + "_charhist.trees")[k]
+  Y ~ dnPhyloOUSD(char_hist, theta=theta, rootTreatment="optimum", alpha=alpha, sigma=sigma2^0.5)
+  Y.clamp(cont)
+
+  time_tmp[1] <- time("nanoseconds")
+  for (m in 1:100){
+    Y.lnProbability()
+  }
+  time_tmp[2] <- time("nanoseconds")
+  n <- ( j - 1 ) * 10 + k
+  time[n] <- ( time_tmp[2] - time_tmp[1] ) / 100
+}
+
+j+=1
+for (k in 1:10){
+  char_hist = readCharacterHistory("data/n_" + i + "/character_histories/t" + j + "_charhist.trees")[k]
+  Y ~ dnPhyloOUSD(char_hist, theta=theta, rootTreatment="optimum", alpha=alpha, sigma=sigma2^0.5)
+  Y.clamp(cont)
+
+  time_tmp[1] <- time("nanoseconds")
+  for (m in 1:100){
+    Y.lnProbability()
+  }
+  time_tmp[2] <- time("nanoseconds")
+  n <- ( j - 1 ) * 10 + k
+  time[n] <- ( time_tmp[2] - time_tmp[1] ) / 100
+}
+
+j+=1
+for (k in 1:10){
+  char_hist = readCharacterHistory("data/n_" + i + "/character_histories/t" + j + "_charhist.trees")[k]
+  Y ~ dnPhyloOUSD(char_hist, theta=theta, rootTreatment="optimum", alpha=alpha, sigma=sigma2^0.5)
+  Y.clamp(cont)
+
+  time_tmp[1] <- time("nanoseconds")
+  for (m in 1:100){
+    Y.lnProbability()
+  }
+  time_tmp[2] <- time("nanoseconds")
+  n <- ( j - 1 ) * 10 + k
+  time[n] <- ( time_tmp[2] - time_tmp[1] ) / 100
+}
+
+j+=1
+for (k in 1:10){
+  char_hist = readCharacterHistory("data/n_" + i + "/character_histories/t" + j + "_charhist.trees")[k]
+  Y ~ dnPhyloOUSD(char_hist, theta=theta, rootTreatment="optimum", alpha=alpha, sigma=sigma2^0.5)
+  Y.clamp(cont)
+
+  time_tmp[1] <- time("nanoseconds")
+  for (m in 1:100){
+    Y.lnProbability()
+  }
+  time_tmp[2] <- time("nanoseconds")
+  n <- ( j - 1 ) * 10 + k
+  time[n] <- ( time_tmp[2] - time_tmp[1] ) / 100
+}
+
+j+=1
+for (k in 1:10){
+  char_hist = readCharacterHistory("data/n_" + i + "/character_histories/t" + j + "_charhist.trees")[k]
+  Y ~ dnPhyloOUSD(char_hist, theta=theta, rootTreatment="optimum", alpha=alpha, sigma=sigma2^0.5)
+  Y.clamp(cont)
+
+  time_tmp[1] <- time("nanoseconds")
+  for (m in 1:100){
+    Y.lnProbability()
+  }
+  time_tmp[2] <- time("nanoseconds")
+  n <- ( j - 1 ) * 10 + k
+  time[n] <- ( time_tmp[2] - time_tmp[1] ) / 100
+}
+
+j+=1
+for (k in 1:10){
+  char_hist = readCharacterHistory("data/n_" + i + "/character_histories/t" + j + "_charhist.trees")[k]
+  Y ~ dnPhyloOUSD(char_hist, theta=theta, rootTreatment="optimum", alpha=alpha, sigma=sigma2^0.5)
+  Y.clamp(cont)
+
+  time_tmp[1] <- time("nanoseconds")
+  for (m in 1:100){
+    Y.lnProbability()
+  }
+  time_tmp[2] <- time("nanoseconds")
+  n <- ( j - 1 ) * 10 + k
+  time[n] <- ( time_tmp[2] - time_tmp[1] ) / 100
+}
+
+j+=1
+for (k in 1:10){
+  char_hist = readCharacterHistory("data/n_" + i + "/character_histories/t" + j + "_charhist.trees")[k]
+  Y ~ dnPhyloOUSD(char_hist, theta=theta, rootTreatment="optimum", alpha=alpha, sigma=sigma2^0.5)
+  Y.clamp(cont)
+
+  time_tmp[1] <- time("nanoseconds")
+  for (m in 1:100){
+    Y.lnProbability()
+  }
+  time_tmp[2] <- time("nanoseconds")
+  n <- ( j - 1 ) * 10 + k
+  time[n] <- ( time_tmp[2] - time_tmp[1] ) / 100
+}
+
+j+=1
+for (k in 1:10){
+  char_hist = readCharacterHistory("data/n_" + i + "/character_histories/t" + j + "_charhist.trees")[k]
+  Y ~ dnPhyloOUSD(char_hist, theta=theta, rootTreatment="optimum", alpha=alpha, sigma=sigma2^0.5)
+  Y.clamp(cont)
+
+  time_tmp[1] <- time("nanoseconds")
+  for (m in 1:100){
+    Y.lnProbability()
+  }
+  time_tmp[2] <- time("nanoseconds")
+  n <- ( j - 1 ) * 10 + k
+  time[n] <- ( time_tmp[2] - time_tmp[1] ) / 100
+}
+
+write(time, filename="output/n_" + i + "_per_rep_time_overhead_2.txt", separator=",")
+#write(time, filename="output/n_" + i + "_per_rep_time_overhead.txt", append="TRUE", separator=",")
+
+
+## quit ##
+q()

@@ -35,17 +35,19 @@ avmvn_cont = mvAVMVN(weight=20, waitBeforeLearning=500, waitBeforeUsing=1000)
 ##########################
 # Specify the rate model #
 ##########################
-vy <- cont.var(characterCont)
-sigma2 ~ dnLognormal(ln(vy), 0.587405)
-moves.append(mvScale(sigma2, weight = 1.0) )
-avmvn_cont.addVariable(sigma2)
 
-theta ~ dnUniform(3, 7)
+theta ~ dnUniform(0.5, 8)
 avmvn_cont.addVariable(theta)
 
 a <- ln(2) / root_age
 alpha ~ dnLognormal( ln(a), 0.587405 )
 avmvn_cont.addVariable(alpha)
+
+vy <- cont.var(characterCont)
+s <- vy * 2 * a
+sigma2 ~ dnLognormal(ln(s), 0.587405)
+moves.append(mvScale(sigma2, weight = 1.0) )
+avmvn_cont.addVariable(sigma2)
 
 moves.append(mvScale(sigma2, weight = 1.0) )
 moves.append(mvScale(alpha, weight = 1.0) )

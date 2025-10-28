@@ -5125,12 +5125,11 @@ lineage.constructor <- function(tree, root_node, e){
                 time_span = subedge_lengths))
 }
 
-# not yet finished - weight matrix function
-## need updates
+
 weights.lineage <- function(tree, alpha, e){
   root_node = length(tree$tip.label) + 1
   lineage <- lineage.constructor(tree, root_node, e)
-  lineage[["alpha"]] = alpha[lineage[["state"]]]
+  lineage[["alpha"]] = unlist(alpha[lineage[["state"]]])
   
   W = matrix(0, ncol = length(alpha), nrow = 1)
   colnames(W) = sort(names(alpha))
@@ -5139,6 +5138,7 @@ weights.lineage <- function(tree, alpha, e){
     lineage <- lineage %>%
       mutate(
         exp1 = -1 * expm1(-1 * alpha * time_span),
+        #exp1 = -1 * expm1(-1 * alpha * time_span),
         sum2_temp = -1 * alpha * time_span)
     lineage$exp1[length(lineage$exp1)] = 1
     lineage$sum2 = 0
@@ -5186,8 +5186,8 @@ cov.accum <- function(tree, mrca_node, alpha, sigma2){
     
     subedge_lengths <- tibble(state = names(subedge_lengths),
                               time_span = subedge_lengths,
-                              alpha = alpha[names(subedge_lengths)],
-                              sigma2 = sigma2[names(subedge_lengths)]) %>% 
+                              alpha = unlist(alpha[names(subedge_lengths)]),
+                              sigma2 = unlist(sigma2[names(subedge_lengths)])) %>% 
       mutate(exp1 = -1 * expm1(-2 * alpha * time_span),
              sum2_temp = -2 * alpha * time_span)
     subedge_lengths$sum2= 0
@@ -5260,8 +5260,10 @@ sd_logL_vcv <- function(tree, continuousChar, alpha, sigma2, theta){
   alpha = alpha[sort(names(alpha))]
   sigma2 = sigma2[sort(names(sigma2))]
   theta = theta[sort(names(theta))]
-  theta = as.matrix(theta, nrow = 3)
-  
+  states = names(theta)
+  theta = matrix(theta, nrow = length(theta))
+  rownames(theta) = states
+
   ntip <- length(tree$tip.label)
   V = vcv.matrix(tree, alpha, sigma2)
   
@@ -5273,7 +5275,7 @@ sd_logL_vcv <- function(tree, continuousChar, alpha, sigma2, theta){
   for (i in 1:ntip){
     log_det_V = log_det_V + log(L[i,i])
   }
-  log_det_V = log_det_V * 2.0 # equals to julia implementation to 12 sig. fig.
+  log_det_V = log_det_V * 2.0
   
   y = NULL
   for (species in tree$tip.label){
@@ -5281,7 +5283,7 @@ sd_logL_vcv <- function(tree, continuousChar, alpha, sigma2, theta){
   }
   
   # inverse of L
-  r = solve(L) %*% y - solve(L) %*% W %*% theta # what does de-correlated residuals mean?
+  r = solve(L) %*% y - solve(L) %*% W %*% theta
   
   # res = - (n/2) * log(2*pi) - 0.5 * log_det_V - 0.5 * dot(r, r)
   #     = exp(-n/2)^(2*pi) * exp(-0.5)^det_V * exp(-0.5)^dot(r, r) ?

@@ -1,0 +1,117 @@
+################################################################################
+#
+# RevBayes Example: Testing hidden rates for state-dependent OU model
+#
+# authors: Priscilla Lau
+#
+################################################################################
+
+tree_size <- 50
+num_disc_states <- 2
+
+
+
+in_dir <- "data/n_" + tree_size + "/k_" + num_disc_states
+out_dir <- "output/n_" + tree_size + "/k_" + num_disc_states
+
+for (i in 1:100)
+{
+    tree_data <- in_dir + "/trees/t" + i + ".tree"
+    disc_data <- in_dir + "/discrete_characters/t" + i + "_Discrete.nex"
+    cont_data <- in_dir + "/continuous_traits/t" + i + "_Continuous.nex"
+    rate_data <- readDelimitedDataFile(in_dir + "/rates/t" + i + "_rate.txt")
+
+    ### Select the character to analyze
+    characterDisc <- 1
+    characterCont <- 1
+
+    ### Read in the tree
+    tree <- readTrees( tree_data )[1]
+    ntips <- tree.ntips()
+    nbranches <- 2 * ntips - 2
+
+    disc <- readDiscreteCharacterData( disc_data )
+
+    disc.excludeAll()
+    disc.includeCharacter(characterDisc)
+
+    cont <- readContinuousCharacterData( cont_data )
+    cont.excludeAll()
+    cont.includeCharacter(characterCont)
+
+    # Create some vector for the moves and monitors of this analysis
+    moves    = VectorMoves()
+    monitors = VectorMonitors()
+    avmvn_cont = mvAVMVN(weight=50, waitBeforeLearning=500, waitBeforeUsing=1000)
+
+    # make the Q matrix
+    rel_rates <- abs(rep( 1 , ( num_disc_states * ( num_disc_states - 1) ) ))
+    rel_rates <- rel_rates / (num_disc_states - 1)
+    lambda <- rate_data[1][1]
+    Q := fnFreeK(lambda*rel_rates, rescaled=FALSE)
+
+    rf <- rep(1/num_disc_states, num_disc_states)
+
+    X ~ dnPhyloCTMCDASiteIID(tree, Q, branchRates=1, type="Standard")
+    X.clamp(disc)
+
+    w1 = 10 * tree_size
+    w2 = 2 * tree_size
+    moves.append( mvCharacterHistory(ctmc=X, qmap_site=Q, graph="node",   proposal="rejection", weight=w1) )
+    moves.append( mvCharacterHistory(ctmc=X, qmap_site=Q, graph="branch", proposal="rejection", weight=w2) )
+
+
+    for(k in 1:nbranches) {
+        num_changes[k] := sum(X.numCharacterChanges(k))
+    }
+    total_num_changes := sum(num_changes)
+
+    char_hist := X.characterHistories()
+
+    root_age <- 1
+    min <- -3
+    max <- 3
+    Vy <- cont.var(characterCont)
+
+    for (j in 1:num_disc_states){
+      theta[j] ~ dnUniform(min, max)
+      moves.append(mvSlide(theta[j], weight = 1.0) )
+      avmvn_cont.addVariable(theta[j])
+
+      a <- ln(2) / root_age
+
+      alpha[j] ~ dnLognormal(ln(a), 0.587405)
+      moves.append(mvScale(alpha[j], weight = 1.0) )
+      avmvn_cont.addVariable(alpha[j])
+
+      s <- Vy * 2 * a
+      sigma2[j] ~ dnLognormal(ln(s), 0.587405)
+      moves.append(mvScale(sigma2[j], weight = 1.0) )
+      avmvn_cont.addVariable(sigma2[j])
+
+    }
+    moves.append( avmvn_cont )
+
+    Y ~ dnPhyloOUSD(char_hist, theta=theta, rootTreatment="optimum", alpha=alpha, sigma=sigma2^0.5)
+    Y.clamp(cont)
+
+    mymodel = model(Y)
+
+    monitors.append( mnModel(filename=out_dir + "/traces/t" + i + ".log", printgen=10) )
+    monitors.append( mnScreen(printgen=100) )
+    monitors.append( mnFile( char_hist, filename=out_dir + "/character_histories/t" + i + ".log", printgen=10 ) )
+
+    ### workspace mcmc ###
+    mymcmc = mcmc(mymodel, monitors, moves, nruns=1, combine="none")
+
+
+    ### run the MCMC ###
+    mymcmc.burnin(generations=5000, tuningInterval=200)
+    mymcmc.run(generations=50000, tuningInterval=200)
+}
+
+
+
+
+## quit ##
+q()

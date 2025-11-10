@@ -6,9 +6,9 @@ source("../utility/functions.R")
 
 # read traces
 seq_map  <- readTrace("output/sdou_seq/trace_MAP.log", burnin = 0.0)
-seq_map[[1]]$model <- "seq-MAP"
+seq_map[[1]]$model <- "seq-single"
 seq_r100 <- readTrace(path = paste0("output/sdou_seq/trace_r100_sampled.log"), burnin = 0.0)
-seq_r100[[1]]$model <- "seq-r100"
+seq_r100[[1]]$model <- "seq-multi"
 joint <- readTrace("output/sdou_joint/trace.log", burnin=0.0)
 joint[[1]]$model <- "joint"
 joint[[1]] <- joint[[1]] %>%
@@ -19,7 +19,7 @@ traces <- rbind(
   seq_map[[1]],
   seq_r100[[1]],
   joint[[1]]) %>% 
-  mutate(model = factor(model, levels = c("seq-MAP", "seq-r100", "joint")))
+  mutate(model = factor(model, levels = c("seq-single", "seq-multi", "joint")))
 
 # summarise the 95% highest posterior density interval
 trace_summary <- traces %>%
@@ -42,15 +42,15 @@ plot_alpha <- traces %>%
   ggplot(aes(y = value, x=parameter, fill=model)) +
   geom_half_violin(draw_quantiles = 0.5, position=position_dodge(width=0.8),
                    linewidth=0.25, width=1.5) +
-  scale_fill_manual(values = c("seq-MAP"="#CC6677", "seq-r100"="#6699CC", "joint"="#DDCC77")) + 
+  scale_fill_manual(values = c("seq-single"="#CC6677", "seq-multi"="#6699CC", "joint"="#DDCC77")) + 
   scale_x_discrete(labels=c("", "", "")) +
   scale_y_continuous(breaks=c(0,2,4)) +
   theme_classic() +
-  ylab("") +
-  xlab("") +
   ggtitle(TeX("Rate of attraction $\\alpha$")) +
+  xlab("") +
   theme(legend.position = "none",
-        plot.title = element_text(hjust = 0.5)) +
+        plot.title = element_text(hjust = 0.5, size=10),
+        axis.title.y = element_blank()) +
   coord_cartesian(ylim=c(0,5))
 
 # obtain x-values of each half-violin element
@@ -81,14 +81,14 @@ plot_theta <- traces %>%
   ggplot(aes(y = value, x=parameter, fill=model)) +
   geom_half_violin(draw_quantiles = 0.5, position=position_dodge(width=0.8),
                    linewidth=0.25, width=1.5) +
-  scale_fill_manual(values = c("seq-MAP"="#CC6677", "seq-r100"="#6699CC", "joint"="#DDCC77")) + 
+  scale_fill_manual(values = c("seq-single"="#CC6677", "seq-multi"="#6699CC", "joint"="#DDCC77")) + 
   scale_x_discrete(labels=c("", "", "")) +
   theme_classic() +
-  ylab("") +
-  xlab("") +
   ggtitle(TeX("Optimum $\\theta$")) +
+  xlab("") +
   theme(legend.position = "none",
-        plot.title = element_text(hjust = 0.5)) +
+        plot.title = element_text(hjust = 0.5, size=10),
+        axis.title.y = element_blank()) +
   coord_cartesian(ylim=c(0,8))
 
 p_theta_data <- ggplot_build(plot_theta)$data[[1]]
@@ -116,14 +116,14 @@ plot_sigma2 <- traces %>%
   ggplot(aes(y = value, x=parameter, fill=model)) +
   geom_half_violin(draw_quantiles = 0.5, position=position_dodge(width=0.8),
                    linewidth=0.25, width=1.5) + 
-  scale_fill_manual(values = c("seq-MAP"="#CC6677", "seq-r100"="#6699CC", "joint"="#DDCC77")) + 
+  scale_fill_manual(values = c("seq-single"="#CC6677", "seq-multi"="#6699CC", "joint"="#DDCC77")) + 
   scale_x_discrete(labels=c("Browsers", "Mixed feeders", "Grazers")) +
   theme_classic() +
-  ylab("") +
-  xlab("") +
   ggtitle(TeX("Diffusion variance $\\sigma^2$")) +
+  xlab("") +
   theme(legend.position = "none",
-        plot.title = element_text(hjust = 0.5)) +
+        plot.title = element_text(hjust = 0.5, size=10),
+        axis.title.y = element_blank()) +
   coord_cartesian(ylim=c(0,7))
 
 p_sigma2_data <- ggplot_build(plot_sigma2)$data[[1]]
@@ -150,6 +150,6 @@ plot_all <- plot_grid(plot_alpha, plot_theta, plot_sigma2, legend, ncol=1, rel_h
 plot_all
 
 # save figure
-ggsave("figures/case_study_ou.pdf", plot_all, width=5, height=5, units="in")
+ggsave("figures/case_study_ou2.pdf", plot_all, width=5, height=4.5, units="in")
 
 

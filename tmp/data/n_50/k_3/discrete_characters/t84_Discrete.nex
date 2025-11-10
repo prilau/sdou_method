@@ -1,0 +1,58 @@
+#NEXUS
+
+BEGIN DATA;
+	DIMENSIONS NTAX=50 NCHAR=1;
+	FORMAT DATATYPE=STANDARD SYMBOLS="123" MISSING=? GAP=-;
+MATRIX
+t26	3
+t24	3
+t41	3
+t49	3
+t31	3
+t21	1
+t17	1
+t44	3
+t14	3
+t13	3
+t50	3
+t19	3
+t23	3
+t16	1
+t2	1
+t45	1
+t4	1
+t30	1
+t8	1
+t46	1
+t43	1
+t18	1
+t10	1
+t47	1
+t11	1
+t1	1
+t38	1
+t6	1
+t12	2
+t35	2
+t33	2
+t28	2
+t42	2
+t25	2
+t32	3
+t3	3
+t5	3
+t40	3
+t9	3
+t39	3
+t29	3
+t15	3
+t7	3
+t48	3
+t37	3
+t27	3
+t20	3
+t22	3
+t34	3
+t36	1
+;
+END;

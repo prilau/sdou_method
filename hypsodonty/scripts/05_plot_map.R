@@ -14,15 +14,15 @@ t <- read.tree("data/artiodactyla_rescaled.tree")
 # process output
 ase_MAP <- processAncStates("output/ase_SCM/anc_states.tre",
                             state_labels=c("0"="Browsers", "1"="Mixed feeders", "2"="Grazers"))
-ase_da <- processAncStates("output/ase_DA/anc_states_marginal_run_1.log",
+ase_da <- processAncStates("output/ase_DA/anc_states_marginal.log",
                            state_labels=c("0"="Browsers", "1"="Mixed feeders", "2"="Grazers"))
 ase_joint <- processAncStates("output/sdou_joint/anc_states_marginal.log",
                               state_labels=c("0"="Browsers", "1"="Mixed feeders", "2"="Grazers"))
-tb_MAP <- read.table("output/ase_SCM/charhist_run_1.log", header = TRUE, sep = "\t")
+tb_MAP <- read.table("output/ase_SCM/charhist.log", header = TRUE, sep = "\t")
 simmap_MAP <- read.simmap(text=tb_MAP$simmap, format = "phylip")
 processed_MAP <- processStochMaps(tree=tree, simmap = simmap_MAP, states = c("0", "1", "2"))
 
-tb_da <- read.table("output/ase_DA/charhist_run_1.log", header = TRUE)
+tb_da <- read.table("output/ase_DA/charhist.log", header = TRUE)
 simmap_da <- read.simmap(text=tb_da$char_hist, format = "phylip")
 processed_da <- processStochMaps(tree=tree, simmap = simmap_da, states = c("0", "1", "2"))
 
@@ -175,8 +175,8 @@ p0 <- p2 +
                      values=c("#2c6e49", "#adc178", "#7f4f24"))
 legend <- get_legend2(p0 + theme(legend.position = "right",
                                   legend.box.margin = margin(0, 0, 0, 12))
-                       + guides(color = guide_legend(override.aes = list(linewidth = 3),
-                                                     title='Diet')))
+                       + guides(color = guide_legend(override.aes = list(linewidth = 2),
+                                                     title='Feeding behavior')))
 #############
 # scm+joint #
 #############
@@ -211,8 +211,6 @@ plot_right <- plot_grid(p0g, plot_right,
                   x=0.5,
                   y=13.5/14,
                   hjust=.5, vjust=.5, size=12)
-#plot_rightmost <- plot_grid(p0w2, ptips, ptips, p0w2,
-#                            rel_heights = c(2,6,6,0.08), ncol=1)
 
 plot_maps_scm_joint <- cowplot::plot_grid(plot_left, plot_mid, plot_right, legend,
                                     rel_widths = c(1,0.01,1,0.6),

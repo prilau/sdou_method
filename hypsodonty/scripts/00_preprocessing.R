@@ -1,9 +1,9 @@
 library(ape)
 library(tidyverse)
 
-tree <- read.nexus("raw/cetartiodactyla_gtr.tre")
+tree <- read.nexus("data/raw/cetartiodactyla_gtr.tre")
 
-df <- read.table("raw/ruminants.txt", sep="\t", header = TRUE)
+df <- read.table("data/raw/ruminants.txt", sep="\t", header = TRUE)
 species_keep <- intersect(tree$tip.label, df$species)
 
 df <- df %>% filter(!is.na(species),
@@ -27,5 +27,8 @@ for (i in 1:nrow(df)){
   cont[[sp]] <- df$HI[i]
 }
 
+df_cont <- df %>% select(species, HI)
+
 write.nexus.data(disc, "data/artiodactyla_Discrete.nex", format="standard")
 write.nexus.data(cont, "data/artiodactyla_Continuous.nex", format="continuous")
+write.csv(df_cont, "data/artiodactyla_Continuous.csv", row.names = FALSE)

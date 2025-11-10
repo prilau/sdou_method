@@ -1,0 +1,58 @@
+
+##############################################################
+# RevBayes Example: Calculate state-dependent OU likelihoods
+#
+#
+# authors: Priscilla Lau
+#
+##############################################################
+
+seed(1234)
+
+NREP   = 20
+NSTATE = 3
+
+#######################
+# Reading in the Data #
+#######################
+### Read in the character histories
+char_hist = readCharacterHistory("../hypsodonty/output/ase_SCM/r100.trees")
+
+### Read in the continuous-character data
+cont <- readContinuousCharacterData("data/artiodactyla_Continuous.nex")
+cont.excludeAll()
+cont.includeCharacter(1)
+
+alphas = readDelimitedDataFile("data/alphas.csv", header=TRUE, separator=",", rownames=FALSE)
+thetas = readDelimitedDataFile("data/thetas.csv", header=TRUE, separator=",", rownames=FALSE)
+sigma2s = readDelimitedDataFile("data/sigma2s.csv", header=TRUE, separator=",", rownames=FALSE)
+
+for (i in 1:NREP)
+{
+
+  for (k in 1:NSTATE)
+  {
+    alpha[k] <- alphas[i][k]
+    theta[k] <- thetas[i][k]
+    sigma2[k] <- sigma2s[i][k]
+  }
+
+  # run likelihood calculation for each character history
+  for (j in 1:char_hist.size())
+  {
+    Y ~ dnPhyloOUSD(char_hist[j], theta=theta, rootTreatment="optimum", alpha=alpha, sigma=sigma2^0.5)
+    Y.clamp(cont)
+    p[j][i] <- Y.lnProbability()
+  }
+}
+
+# write likelihoods
+for (j in 1:char_hist.size())
+{
+  write(p[j], filename="output/rb_likelihoods_charHist_" + j + ".txt", separator=",")
+}
+
+
+
+## quit ##
+q()

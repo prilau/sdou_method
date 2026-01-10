@@ -64,7 +64,7 @@ p <- temp %>%
   scale_x_continuous(breaks=log(c(500, 1000, 5000, 10000, 25000, 50000, 100000)), label=c("500", "1k", "5k", "10k", "25k", "50k", "100k")) +
   scale_y_continuous(breaks=log(c(1e3, 1e4, 1e5)), label=c("100 ns", expression(paste("1 ", mu, "s")), expression(paste("10 ", mu, "s")))) +
   ylab("Time per calculation") +
-  theme_classic() +
+  theme_bw() +
   xlab("Tree size") +
   theme(legend.position="none",
         axis.title = element_text(size=16),

@@ -53,12 +53,7 @@ avmvn_cont = mvAVMVN(weight=50, waitBeforeLearning=500, waitBeforeUsing=1000)
 # make the Q matrix
 # make the Q matrix
 
-#allowed_rates ~ dnDirichlet(rep(1, 4)*10)
-#moves.append( mvBetaSimplex( allowed_rates, weight=2 ) )
-#moves.append( mvDirichletSimplex( allowed_rates, weight=2 ) )
-#avmvn.addVariable( allowed_rates )
 
-#all_rates := [ allowed_rates[1], 0, allowed_rates[2], allowed_rates[3], 0, allowed_rates[4] ]
 all_rates <- [ 1, 0, 1, 1, 0, 1 ]
 
 lambda ~ dnLognormal(ln(0.05), 0.4)
@@ -69,11 +64,7 @@ Q := fnFreeK(lambda*all_rates, rescaled=FALSE)
 
 # set root prior
 
-#rf_prior <- rep(1,num_disc_states)
-#rf ~ dnDirichlet( rf_prior )
-#moves.append( mvBetaSimplex( rf, weight=2 ) )
-#moves.append( mvDirichletSimplex( rf, weight=2 ) )
-#avmvn.addVariable( rf )
+
 rf <- simplex( rep( 1/3, 3 ) )
 moves.append( avmvn_disc )
 

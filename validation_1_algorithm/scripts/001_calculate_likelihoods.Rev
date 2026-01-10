@@ -40,7 +40,7 @@ for (i in 1:NREP)
   # run likelihood calculation for each character history
   for (j in 1:char_hist.size())
   {
-    Y ~ dnPhyloOUSD(char_hist[j], theta=theta, rootTreatment="optimum", alpha=alpha, sigma=sigma2^0.5)
+    Y ~ dnPhyloOUSD(char_hist[j], theta=theta, rootTreatment="optimum", alpha=alpha, sigma=sigma2^0.5, nSites=1)
     Y.clamp(cont)
     p[j][i] <- Y.lnProbability()
   }

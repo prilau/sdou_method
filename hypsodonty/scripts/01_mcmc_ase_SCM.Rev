@@ -1,16 +1,12 @@
-#################################################################################
-#                                                                               #
-# Sequential inference: ancestral state reconstruction using stochastic mapping #
-#                                                                               #
-# author: Priscilla Lau                                                         #
-#                                                                               #
-#################################################################################
+##################################################
+# Empirical example for state-dependent OU models:
+# Character history reconstruction with
+# stochastic character mapping
+#
+# authors:
+#
+################################################
 
-#RUN_INDEX <- args[1]
-#out_dir <- args[2]
-#tree_data <- args[3]
-#disc_data <- args[4]
-#RUN_INDEX <- 2
 out_dir <- "output/ase_SCM/"
 tree_data <- "data/artiodactyla_rescaled.tree"
 disc_data <- "data/artiodactyla_Discrete.nex"
@@ -44,12 +40,6 @@ avmvn = mvAVMVN(weight=20, waitBeforeLearning=500, waitBeforeUsing=1000)
 
 # make the Q matrix
 
-#allowed_rates ~ dnDirichlet(rep(1, 4)*10)
-#moves.append( mvBetaSimplex( allowed_rates, weight=2 ) )
-#moves.append( mvDirichletSimplex( allowed_rates, weight=2 ) )
-#avmvn.addVariable( allowed_rates )
-
-#all_rates := [ allowed_rates[1], 0, allowed_rates[2], allowed_rates[3], 0, allowed_rates[4] ]
 all_rates <- [ 1, 0, 1, 1, 0, 1 ]
 
 lambda ~ dnLognormal(ln(0.05), 0.4)
@@ -60,11 +50,6 @@ Q := fnFreeK(lambda*all_rates, rescaled=FALSE)
 
 # set root prior
 
-#rf_prior <- rep(1,num_disc_states)
-#rf ~ dnDirichlet( rf_prior )
-#moves.append( mvBetaSimplex( rf, weight=2 ) )
-#moves.append( mvDirichletSimplex( rf, weight=2 ) )
-#avmvn.addVariable( rf )
 rf <- simplex( rep( 1/3, 3 ) )
 moves.append( avmvn )
 
@@ -78,22 +63,8 @@ X.clamp(disc)
 
 mymodel = model(X)
 
-#monitors.append( mnModel(filename=out_dir + "trace_run_" + RUN_INDEX + ".log", printgen=10) )
 monitors.append( mnModel(filename=out_dir + "trace.log", printgen=10) )
 monitors.append( mnScreen(printgen=1000) )
-#monitors.append( mnJointConditionalAncestralState(tree=tree,
-#                                                  ctmc=X,
-#                                                  filename=out_dir + "states_run_" + RUN_INDEX + ".log",
-#                                                  type="Standard",
-#                                                  printgen=10,
-#                                                  withTips=true,
-#                                                  withStartStates=false) )
-#
-#monitors.append( mnStochasticCharacterMap(ctmc=X,
-#                                          filename=out_dir + "charhist_run_" + RUN_INDEX + ".log",
-#                                          printgen=10,
-#                                          include_simmap=true) )
-
 monitors.append( mnJointConditionalAncestralState(tree=tree,
                                                   ctmc=X,
                                                   filename=out_dir + "states.log",
@@ -119,16 +90,6 @@ mymcmc = mcmc(mymodel, monitors, moves, nruns=2, combine="mixed")
 ### run the MCMC ###
 mymcmc.burnin(generations=5000, tuningInterval=200)
 mymcmc.run(generations=50000, tuningInterval=200)
-
-#anc_states = readAncestralStateTrace(out_dir + "states_run_" + RUN_INDEX + ".log")
-#anc_tree = ancestralStateTree(tree=tree, ancestral_state_trace_vector=anc_states, include_start_states=false, file=out_dir + "anc_states_run_" + RUN_INDEX + ".tre", burnin=0.0, summary_statistic="MAP", site=1, nStates=3)
-#anc_states_stoch_map = readAncestralStateTrace(out_dir + "charhist_run_" + RUN_INDEX + ".log")
-#char_map_tree = characterMapTree(tree=tree,
-#                 ancestral_state_trace_vector=anc_states_stoch_map,
-#                 character_file=out_dir + "marginal_character_run_" + RUN_INDEX + ".tre",
-#                 posterior_file=out_dir + "marginal_posterior_run_" + RUN_INDEX + ".tre",
-#                 burnin=0.0,
-#                 num_time_slices=500)
 
 anc_states = readAncestralStateTrace(out_dir + "states.log")
 anc_tree = ancestralStateTree(tree=tree, ancestral_state_trace_vector=anc_states, include_start_states=false, file=out_dir + "anc_states.tre", burnin=0.0, summary_statistic="MAP", site=1, nStates=3)

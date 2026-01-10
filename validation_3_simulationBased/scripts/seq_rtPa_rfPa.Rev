@@ -62,6 +62,10 @@ for (i in 1:num_disc_states){
 
 }
 
+Y_root ~ dnNormal(5, 1)
+moves.append(mvSlide(Y_root, weight = 1.0) )
+avmvn.addVariable(Y_root)
+
 moves.append( avmvn )
 
 
@@ -69,7 +73,7 @@ moves.append( avmvn )
 # PhyloCTMC Model #
 ###################
 
-Y ~ dnPhyloOUSD(characterHistory=char_hist, alpha=alpha, theta=theta, sigma=sigma2^0.5, rootTreatment="optimum", nSites=1)
+Y ~ dnPhyloOUSD(characterHistory=char_hist, alpha=alpha, theta=theta, sigma=sigma2^0.5, rootTreatment="parameter", rootValue=Y_root, nSites=1)
 
 # attach the data
 Y.clamp(cont)

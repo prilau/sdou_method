@@ -1,17 +1,15 @@
-################################################################################
+###############################################
 #
-# RevBayes Validation Test: Ornstein-Uhlenbeck on a fixed tree
+# Validation for state-dependent OU models:
+#   Simulation-based calibration
 #
-# Model: Continuous character(s) evolve under Ornstein-Uhlenbeck model.
+# authors:
 #
-#
-# authors: Sebastian Hoehna
-#
-################################################################################
+###############################################
 
 ## Global settings
 
-seed(10101)
+seed(2345)
 NUM_VALIDATION_REPLICATES = 1000
 NUM_MCMC_ITERATIONS       = 10000
 
@@ -53,25 +51,28 @@ nbranches <- 2 * ntips - 2
 root_age <- tree.rootAge()
 
 # make the Q matrix
+rates ~ dnDirichlet([100, 100, 1, 100, 1, 1])
+moves.append( mvBetaSimplex( rates, weight=2 ) )
+moves.append( mvDirichletSimplex( rates, weight=2 ) )
+avmvn.addVariable( rates )
+
 lambda ~ dnLognormal(ln(0.05), 0.4)
 moves.append( mvScale(lambda, weight=1.0) )
 avmvn.addVariable( lambda )
 
-#rates ~ dnDirichlet(rep(1, num_disc_states*(num_disc_states-1))*10)
-#moves.append( mvBetaSimplex( rates, weight=2 ) )
-#moves.append( mvDirichletSimplex( rates, weight=2 ) )
-#avmvn.addVariable( rates )
+Q := fnFreeK(rates, rescaled=FALSE)
 
-Q := fnJC(num_disc_states)
 
-rf <- simplex( rep( 1/3, 3 ) )
-
+rf ~ dnDirichlet(abs([100, 1, 1]))
+moves.append( mvBetaSimplex( rf, weight=2 ) )
+moves.append( mvDirichletSimplex( rf, weight=2 ) )
+avmvn.addVariable( rf )
 
 # make the data-augmented CTCM model
 X ~ dnPhyloCTMCDASiteIID(tree, Q, branchRates=lambda, type="Standard", rootFrequencies=rf, nSites=1)
 
 # include proposals for the discrete character history
-moves.append( mvCharacterHistory(ctmc=X, qmap_site=Q, graph="node",   proposal="rejection", weight=200.0) )
+moves.append( mvCharacterHistory(ctmc=X, qmap_site=Q, graph="node",   proposal="rejection", weight=100.0) )
 moves.append( mvCharacterHistory(ctmc=X, qmap_site=Q, graph="branch", proposal="rejection", weight=100.0) )
 
 
@@ -128,13 +129,9 @@ mymodel = model(Y)
 
 mymcmc = mcmc(mymodel, monitors, moves)
 
-validation = validationAnalysis( mymcmc, NUM_VALIDATION_REPLICATES, directory="output/rtEq_rfPa" )
+validation = validationAnalysis( mymcmc, NUM_VALIDATION_REPLICATES, directory="output/rtEq" )
 validation.burnin(generations=0.1*NUM_MCMC_ITERATIONS,tuningInterval=100)
 validation.run(generations=NUM_MCMC_ITERATIONS)
-validation.summarize(coverageProbability=0.9)
-validation.summarize(coverageProbability=0.5)
-
-
 
 # you may want to quit RevBayes now
 q()

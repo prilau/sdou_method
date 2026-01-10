@@ -1,12 +1,12 @@
-################################################################################
+##################################################
 #
-# RevBayes Example: Bayesian inference of rates of evolution under a
-#                   state-dependent Brownian-motion model
+# Validation for state-dependent OU models:
+#   Comparison to a state-independent OU model
 #
 #
-# authors: Sebastian Hoehna
+# authors:
 #
-################################################################################
+##################################################
 
 #######################
 # Reading in the Data #

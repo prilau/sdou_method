@@ -5,38 +5,38 @@ library(RevGadgets)
 library(tidyverse)
 library(pracma)
 library(slouch)
-library(tibble) 
+library(tibble)
 
 readCharacterData = function(path, exclude) {
-  
+
   # read the file
   lines = readLines(path)
-  
+
   # find lines corresponding to data
   start_line = grep("MATRIX", toupper(lines), fixed=TRUE) + 1
   end_line   = grep(";", lines, fixed=TRUE)
   end_line   = end_line[which(end_line > start_line)[1]] - 1
-  data_lines = lines[start_line:end_line]  
-  
+  data_lines = lines[start_line:end_line]
+
   # strip out white space and tabs
   data_lines = gsub("\t"," ", data_lines)
   data_lines = strsplit(data_lines, " ")
   data_lines = lapply(data_lines, function(x) x[x != ""])
-  
+
   # get the taxa
   taxa = sapply(data_lines, function(x) x[1])
   data = do.call(rbind, lapply(data_lines, function(x) as.numeric(x[-1])))
   rownames(data) = taxa
-  
+
   # excude the specified traits
   data = data[,!1:ncol(data) %in% exclude]
-  
-  return(data)  
-  
+
+  return(data)
+
 }
 
 writeCharacterData <- function(data, file, type) {
-  
+
   lines <- "#NEXUS"
   lines <- c(lines, c(""))
   lines <- c(lines, "BEGIN DATA;")
@@ -49,72 +49,20 @@ writeCharacterData <- function(data, file, type) {
     stop("Invalid data type")
   }
   lines <- c(lines,"MATRIX")
-  
+
   taxa <- rownames(data)
   for(t in taxa) {
     these_traits <- as.numeric(data[t,])
     lines <- c(lines, paste(t, paste0(these_traits, collapse="\t"), sep="\t"))
   }
-  
+
   lines <- c(lines, ";")
   lines <- c(lines, "END;")
-  
+
   # cat(lines, sep="\n")
-  
+
   cat(lines, file=file, sep="\n")
-  
-}
 
-drawHalflife <- function(state_dependent, num_state, root_age){
-  if(state_dependent == T){
-    halflife <- runif(n=num_state, 0.1*root_age, root_age)
-  } else {
-    halflife <- rep(runif(n=1, 0.1*root_age, root_age), num_state)
-  }
-  names(halflife) = c(1:(num_state))
-  return(halflife)
-}
-
-drawStv <- function(state_dependent, num_state, emp){
-  if(isTRUE(state_dependent)){
-    stv <- runif(n=num_state, 0.5*emp, 2*emp)
-  } else {
-    stv <- rep(runif(n=1, 0.5*emp, 2*emp), num_state)
-  }
-  names(stv) = c(1:(num_state))
-  return(stv)
-}
-
-
-drawTheta <- function(linked, state_dependent, num_state){
-  if (isTRUE(linked)){
-    # can it be extended to more than 2 states?
-    theta <- c(runif(1, -10, 10))
-    if(num_state == 2){
-      x <- rnorm(1, 0, 4)
-      #while (abs(x+theta[1]) > 8){
-      #  x <- rnorm(1, 0, 4)
-      #}
-      theta[2] <- theta[1] + x
-    } else if (num_state == 3){
-      x <- rnorm(1, 0, 4)
-      #while (abs(x+theta[1]) > 8 | abs(x-theta[1]) > 8){
-      #  x <- rnorm(1, 0, 4)
-      #}
-      theta[2] <- theta[1] + x
-      theta[3] <- theta[1] - x
-    } else {
-      print(paste("Linked theta only supports 2 and 3-state currently."))
-    }
-  } else {
-    if(isTRUE(state_dependent)){
-      theta <- c(runif(n=num_state, -10, 10))
-    } else {
-      theta <- rep(runif(n=1, -10, 10), num_state)
-    }
-  }
-  names(theta) = c(1:(num_state))
-  return(theta)
 }
 
 simulateContinuous = function(tree, alpha, sigma2, theta) {
@@ -130,7 +78,7 @@ simulateContinuous = function(tree, alpha, sigma2, theta) {
   }
 
   mu_at_nodes[root_node] <- theta[[state]]
-  
+
   for (edge_index in preorder){
     sub_edges <- tree$maps[[edge_index]]
     parent_node <- edges[edge_index, 1]
@@ -139,22 +87,22 @@ simulateContinuous = function(tree, alpha, sigma2, theta) {
       #alpha <- drawAlpha(state_dependent = stateDependencies[1])
       #sigma2 <- drawAlpha(state_dependent = stateDependencies[2])
       #theta <- drawAlpha(state_dependent = stateDependencies[3])
-      
+
       state <- names(sub_edges[j])
       mu <- y * exp(-alpha[[state]] * sub_edges[[j]]) + theta[[state]] * (1 - exp(-alpha[[state]] * sub_edges[[j]]))
       v <- sigma2[[state]] / (2 * alpha[[state]]) * (1 - exp(-2 * alpha[[state]] * sub_edges[[j]]))
-      y <- rnorm(n=1, mu, sqrt(v))    
+      y <- rnorm(n=1, mu, sqrt(v))
     }
     desc_node <- edges[edge_index, 2]
     mu_at_nodes[desc_node] <- y
   }
-  
+
   cont_list <- list()
   for (i in 1:length(tree$tip.label)){
     tip <- tree$tip.label[i]
     cont_list[[tip]] <- mu_at_nodes[i]
   }
-  
+
   return(cont_list)
 }
 
@@ -179,7 +127,7 @@ log_to_simmap <- function(dir_in, files, burnin=0.1){
 
 simmap_to_ancStates <- function(input_path=NULL, input_simmap=NULL, output_path, tree){
   index_to_rev <- RevGadgets::matchNodes(tree)
-  
+
   if (!is.null(input_simmap))
   {
     simmaps <- read.simmap(text=input_simmap, format="phylip")
@@ -188,15 +136,15 @@ simmap_to_ancStates <- function(input_path=NULL, input_simmap=NULL, output_path,
   {
     simmaps <- read.simmap(input_path, format="phylip")
   }
-  
+
   df_rev <- data.frame()
-  
+
   for (row_num in 1:length(simmaps)){
     simmap <- simmaps[[row_num]]
-    
+
     # Iteration column
     df_rev[row_num, 1] <- row_num-1
-    
+
     for (i in 1:(length(simmap$maps))){
       ape_node <- which(index_to_rev[,2]==i)
       ape_edge <- which(simmap$edge[,2]==ape_node)
@@ -205,7 +153,7 @@ simmap_to_ancStates <- function(input_path=NULL, input_simmap=NULL, output_path,
     }
     df_rev[row_num, length(simmap$maps)+2] <- names(map[1])
   }
-  
+
   header <- paste0("end_", as.character(1:(length(simmap$maps)+1)))
   colnames(df_rev) <- c("Iteration", header)
   write_tsv(df_rev, output_path)
@@ -219,13 +167,13 @@ simmap_to_stochmap <- function(input_path=NULL, output_path, tree, simmaps=NULL)
     simmaps <- read.simmap(text=tb$char_hist, format="phylip")
   }
   df_rev <- data.frame()
-  
+
   for (row_num in 1:length(simmaps)){
     simmap <- simmaps[[row_num]]
-    
+
     # Iteration column
     df_rev[row_num, 1] <- ( row_num-1 ) * 10
-    
+
     for (i in 1:(length(simmap$maps))){
       ape_node <- which(index_to_rev[,2]==i)
       ape_edge <- which(simmap$edge[,2]==ape_node)
@@ -241,39 +189,39 @@ simmap_to_stochmap <- function(input_path=NULL, output_path, tree, simmaps=NULL)
     }
     df_rev[row_num, length(simmap$maps)+2] <- paste0("{", names(map[length(map)]), ",0}")
   }
-  
+
   header <- as.character(1:(length(simmap$maps)+1))
   colnames(df_rev) <- c("Iteration", header)
   write_tsv(df_rev, output_path)
 }
 
 matchNodes = function(phy) {
-  
+
   # get some useful info
   num_tips = length(phy$tip.label)
   num_nodes = phy$Nnode
   tip_indexes = 1:num_tips
   node_indexes = num_tips + num_nodes:1
-  
+
   node_map = data.frame(R=1:(num_tips + num_nodes), Rev=NA, visits=0)
   current_node = phy$Nnode + 2
   k = 1
   t = 1
-  
+
   while(TRUE) {
-    
+
     if ( current_node <= num_tips ) {
       node_map$Rev[node_map$R == current_node] = t
       current_node = phy$edge[phy$edge[,2] == current_node,1]
       t = t + 1
     } else {
-      
+
       if ( node_map$visits[node_map$R == current_node] == 0 ) {
         node_map$Rev[node_map$R == current_node] = node_indexes[k]
         k = k + 1
       }
       node_map$visits[node_map$R == current_node] = node_map$visits[node_map$R == current_node] + 1
-      
+
       if ( node_map$visits[node_map$R == current_node] == 1 ) {
         # go right
         current_node = phy$edge[phy$edge[,1] == current_node,2][2]
@@ -301,7 +249,7 @@ processAncStates <-
     # read in tree
     tree <- readTrees(path)
     t <- tree[[1]][[1]]
-    
+
     # process column names
     include_start_states <- FALSE
     if ("anc_state_1" %in% names(t@data)) {
@@ -315,7 +263,7 @@ processAncStates <-
                 [\'anc_state\'] or [\'start_state\' and \'end_state\']"
       )
     }
-    
+
     # add state labels
     n_states <- length(state_labels)
     t <-
@@ -325,19 +273,19 @@ processAncStates <-
                            labels_as_numbers,
                            missing_to_NA,
                            n_states)
-    
+
     # add range for pp factors
     t <- .set_pp_factor_range(t, include_start_states)
-    
+
     # return processed TreeIO object
     return(t)
-    
+
   }
 
 plotAncStatesMAP <- function(t,
                              # option for plotting shoulder states
                              cladogenetic = FALSE,
-                             
+
                              # label taxa at tips
                              tip_labels = TRUE,
                              tip_labels_size = 2,
@@ -345,42 +293,42 @@ plotAncStatesMAP <- function(t,
                              tip_labels_italics = FALSE,
                              tip_labels_formatted = FALSE,
                              tip_labels_remove_underscore = TRUE,
-                             
+
                              # label states at tips
                              tip_labels_states = FALSE,
                              tip_labels_states_size = 2,
                              tip_labels_states_offset = 0.1,
-                             
+
                              # text labels at nodes
                              node_labels_as = NULL,
                              node_labels_size = 2,
                              node_labels_offset = 0.1,
                              node_labels_centered = FALSE,
-                             
+
                              # what to plot at nodes
                              node_size_as = "state_posterior",
                              node_color_as = "state",
                              node_shape_as = NULL,
-                             
+
                              # aesthetics for plotting at nodes
                              node_shape = 19,
                              node_color = "default",
                              node_size = c(2, 6),
-                             
+
                              # aesthetics for tip states (inherents additional
                              # aesthetics from nodes)
                              tip_states = TRUE,
                              tip_states_size = node_size,
                              tip_states_shape = node_shape,
-                             
+
                              state_transparency = 0.75,
                              tree_layout = "rectangular",
-                             
+
                              timeline = FALSE,
                              geo = timeline,
                              geo_units = list("epochs", "periods"),
                              time_bars = timeline,
-                             
+
                              tree_color = "black",
                              tree_linewidth = 1,
                              ...) {
@@ -399,7 +347,7 @@ plotAncStatesMAP <- function(t,
     stop("tip_labels_italics should be TRUE or FALSE")
   if (is.logical(tip_labels_formatted) == FALSE)
     stop("tip_labels_formatted should be TRUE or FALSE")
-  if (tip_labels_italics == TRUE & tip_labels_formatted == TRUE) 
+  if (tip_labels_italics == TRUE & tip_labels_formatted == TRUE)
     stop("tip_labels_italics and tip_labels_formatted may not both be TRUE")
   if (is.logical(tip_labels_remove_underscore) == FALSE)
     stop("tip_labels_remove_underscore should be TRUE or FALSE")
@@ -489,44 +437,44 @@ plotAncStatesMAP <- function(t,
   if (is.list(geo_units)) {
     if (length(geo_units) != 2)
       stop(
-        "geo_units should be 'periods', 'epochs', 'stages', 'eons', 
+        "geo_units should be 'periods', 'epochs', 'stages', 'eons',
          'eras', or a list of two of those units, such as:
         list('epochs','periods')"
       )
-    if (geo_units[[1]] %in% 
+    if (geo_units[[1]] %in%
         c('periods', 'epochs', 'stages', 'eons', 'eras')  == FALSE)
       stop(
-        "geo_units should be 'periods', 'epochs', 'stages', 'eons', 
+        "geo_units should be 'periods', 'epochs', 'stages', 'eons',
          'eras', or a list of two of those units, such as:
         list('epochs','periods')"
       )
-    if (geo_units[[2]] %in% 
+    if (geo_units[[2]] %in%
         c('periods', 'epochs', 'stages', 'eons', 'eras')  == FALSE)
       stop(
-        "geo_units should be 'periods', 'epochs', 'stages', 'eons', 
+        "geo_units should be 'periods', 'epochs', 'stages', 'eons',
          'eras', or a list of two of those units, such as:
         list('epochs','periods')"
       )
   } else {
-    if (geo_units %in% 
+    if (geo_units %in%
         c('periods', 'epochs', 'stages', 'eons', 'eras') == FALSE)
       stop(
-        "geo_units should be 'periods', 'epochs', 'stages', 'eons', 
+        "geo_units should be 'periods', 'epochs', 'stages', 'eons',
          'eras', or a list of two of those units, such as:
         list('epochs','periods')"
       )
   }
   ##### calculate helper variables #####
   tree <- attributes(t)$phylo
-  
+
   ##### create basic tree plot #####
   p <- ggtree::ggtree(t, layout = tree_layout, color = tree_color, linewidth = tree_linewidth, ...)
-  
+
   # get dimensions
   n_node <- ape::Nnode(tree, internal.only = FALSE)
   tree_height <- max(phytools::nodeHeights(t@phylo))
   ntips <- sum(p$data$isTip)
-  
+
   ##### process column names #####
   if (cladogenetic == TRUE) {
     state_pos_str_base <- c("end_state_", "start_state_")
@@ -537,7 +485,7 @@ plotAncStatesMAP <- function(t,
              "anc_state_1" %in% colnames(p$data)) {
     state_pos_str_base <- "anc_state_"
   }
-  
+
   if (is.null(node_color_as) == FALSE) {
     if (node_color_as == "state") {
       if (!is.factor(dplyr::pull(p$data, paste0(state_pos_str_base[1], "1")))) {
@@ -552,7 +500,7 @@ plotAncStatesMAP <- function(t,
         levels(p$data$node_color_as) <-
           sort(levels(p$data$node_color_as))
       }
-      
+
     }
     if (node_color_as == "node_posterior") {
       p$data$node_color_as <- as.numeric(p$data$posterior)
@@ -563,7 +511,7 @@ plotAncStatesMAP <- function(t,
                                paste0(state_pos_str_base[1], "1", "_pp")))
     }
   }
-  
+
   if (is.null(node_size_as) == FALSE) {
     if (node_size_as == "state") {
       size_tmp <- dplyr::pull(p$data, paste0(state_pos_str_base[1], "1"))
@@ -582,10 +530,10 @@ plotAncStatesMAP <- function(t,
                                paste0(state_pos_str_base[1], "1", "_pp")))
     }
   }
-  
+
   if (is.null(node_shape_as) == FALSE) {
     if (node_shape_as == "state") {
-      
+
       p$data$node_shape_as <-
         factor(dplyr::pull(p$data, paste0(state_pos_str_base[1], "1")))
     }
@@ -598,7 +546,7 @@ plotAncStatesMAP <- function(t,
                                paste0(state_pos_str_base[1], "1", "_pp")))
     }
   }
-  
+
   if (cladogenetic == TRUE) {
     if (is.null(node_color_as) == FALSE) {
       if (node_color_as == "state") {
@@ -610,7 +558,7 @@ plotAncStatesMAP <- function(t,
           p$data$clado_node_color_as <-
             dplyr::pull(p$data, paste0(state_pos_str_base[2], "1"))
         }
-        
+
         if (suppressWarnings(any(is.na(as.integer(levels(p$data$clado_node_color_as)))))) {
           levels(p$data$clado_node_color_as) <-
             sort(levels(p$data$clado_node_color_as))
@@ -625,7 +573,7 @@ plotAncStatesMAP <- function(t,
                                  paste0(state_pos_str_base[2], "1", "_pp")))
       }
     }
-    
+
     if (is.null(node_size_as) == FALSE) {
       if (node_size_as == "state") {
         clado_size_tmp <- dplyr::pull(p$data, paste0(state_pos_str_base[2], "1"))
@@ -644,7 +592,7 @@ plotAncStatesMAP <- function(t,
                                  paste0(state_pos_str_base[2], "1", "_pp")))
       }
     }
-    
+
     if (is.null(node_shape_as) == FALSE) {
       if (node_shape_as == "state") {
         p$data$clado_node_shape_as <-
@@ -660,7 +608,7 @@ plotAncStatesMAP <- function(t,
       }
     }
   }
-  
+
   # gather list of all character states from data
   if (cladogenetic == TRUE) {
     all_states <- unique(c(p$data$start_state_1, p$data$end_state_1))
@@ -671,7 +619,7 @@ plotAncStatesMAP <- function(t,
       ))))
   }
   all_states <- sort(all_states)
-  
+
   ##### color processing and checks #####
   # check if number of states exceeds default color palette options
   if (!is.null(node_color_as) && node_color_as == "states") {
@@ -683,7 +631,7 @@ plotAncStatesMAP <- function(t,
         node_color <- grDevices::colorRampPalette(colFun(12))(nstates)
       }
     }
-    
+
     # check if number of states not equal to provided colors
     if (node_color[1] != "default" &
         length(node_color) < length(all_states)) {
@@ -712,7 +660,7 @@ plotAncStatesMAP <- function(t,
       )
     }
   }
-  
+
   # set default colors
   if (any(node_color == "default")) {
     if (is.null(node_color_as) == TRUE) {
@@ -729,8 +677,8 @@ plotAncStatesMAP <- function(t,
   } else {
     colors <- node_color
   }
-  
-  
+
+
   ##### adjust aesthetics lengths if needed #####
   # shape
   if (is.null(node_shape_as) == TRUE) {
@@ -754,7 +702,7 @@ plotAncStatesMAP <- function(t,
   if (tip_labels_remove_underscore) {
     p$data$label <- gsub("_", " ", p$data$label)
   }
-  
+
   ##### get hjust values #####
   if (node_labels_centered) {
     hjust_node <- 0.5
@@ -787,13 +735,13 @@ plotAncStatesMAP <- function(t,
     `%<+%` <- ggtree::`%<+%`
     p <- p %<+% shoulder_data
   }
-  
+
   ##### start plotting #####
-  
+
   # add timeline
   if (timeline == TRUE) {
     max_age <- tree_height
-    
+
     if (max_age > 100) {
       interval <- 50
     } else {
@@ -848,7 +796,7 @@ plotAncStatesMAP <- function(t,
           bord = c("right", "top", "bottom"),
           neg  = TRUE
         )
-        
+
       }
     }
     #add axis title
@@ -865,7 +813,7 @@ plotAncStatesMAP <- function(t,
         vx = -xline,
         vy = rep(-tick_height * 5 + tick_height, length(xline))
       )
-    
+
     p <-
       p + ggplot2::geom_segment(ggplot2::aes(
         x = 0,
@@ -886,7 +834,7 @@ plotAncStatesMAP <- function(t,
         label = rev(xline),
         size = tip_labels_size
       )
-    
+
     # add vertical gray bars
     if (time_bars) {
       if (geo) {
@@ -922,7 +870,7 @@ plotAncStatesMAP <- function(t,
                                                      max_age /  (2 * tot)))
     }
   }
-  
+
   # add tip labels
   if (tip_labels == TRUE) {
     if (tip_labels_italics == TRUE) {
@@ -947,14 +895,14 @@ plotAncStatesMAP <- function(t,
                                 offset = tip_labels_offset)
     }
   }
-  
+
   # add the tip states
   if (tip_states == TRUE) {
     # unless node size should vary by state, don't allow tip sizes to vary
     if (is.null(node_size_as) == TRUE || node_size_as != "state") {
       tip_states_size <- tip_states_size[1]
     }
-    
+
     # vary tip symbols by color only
     # when shape is null and size is not state
     if (is.null(node_color_as) == FALSE) {
@@ -970,7 +918,7 @@ plotAncStatesMAP <- function(t,
         )
       }
     }
-    
+
     # vary tip symbols by shape only
     # when shape is state, color is not state, size is not state
     if (is.null(node_shape_as) == FALSE) {
@@ -987,7 +935,7 @@ plotAncStatesMAP <- function(t,
         )
       }
     }
-    
+
     # vary tip symbol by shape and color
     # when shape is state, color is state, and size is anything but state
     if (is.null(node_color_as) == FALSE &
@@ -1004,7 +952,7 @@ plotAncStatesMAP <- function(t,
         )
       }
     }
-    
+
     # vary tip symbol by size only
     # when size is state, color is not state, and shape is null
     if (is.null(node_size_as) == FALSE) {
@@ -1020,7 +968,7 @@ plotAncStatesMAP <- function(t,
         )
       }
     }
-    
+
     # vary tip symbol by size and color
     # when size is state, color is state or PP, and shape is null
     if (is.null(node_size_as) == FALSE &
@@ -1036,7 +984,7 @@ plotAncStatesMAP <- function(t,
       }
     }
   }
-  
+
   # plot symbols at nodes and shoulders
   blank_nodes <-
     is.null(node_color_as) == TRUE &
@@ -1081,8 +1029,8 @@ plotAncStatesMAP <- function(t,
           )
       }
     }
-    
-    
+
+
     # plot if color and size vary
     if (is.null(node_size_as) == FALSE &
         is.null(node_color_as) == FALSE &
@@ -1120,7 +1068,7 @@ plotAncStatesMAP <- function(t,
           )
       }
     }
-    
+
     #plot if color and shape vary
     if (is.null(node_size_as) == TRUE &
         is.null(node_color_as) == FALSE &
@@ -1158,7 +1106,7 @@ plotAncStatesMAP <- function(t,
           )
       }
     }
-    
+
     #plot if size and shape vary
     if (is.null(node_size_as) == FALSE &
         is.null(node_color_as) == TRUE &
@@ -1196,7 +1144,7 @@ plotAncStatesMAP <- function(t,
           )
       }
     }
-    
+
     #plot if just color varies
     if (is.null(node_size_as) == TRUE &
         is.null(node_color_as) == FALSE &
@@ -1235,7 +1183,7 @@ plotAncStatesMAP <- function(t,
           )
       }
     }
-    
+
     #plot if just size varies
     if (is.null(node_size_as) == FALSE &
         is.null(node_color_as) == TRUE &
@@ -1274,7 +1222,7 @@ plotAncStatesMAP <- function(t,
           )
       }
     }
-    
+
     #plot if just shape varies
     if (is.null(node_size_as) == TRUE &
         is.null(node_color_as) == TRUE &
@@ -1314,7 +1262,7 @@ plotAncStatesMAP <- function(t,
       }
     }
   }
-  
+
   # add node labels (text)
   if (is.null(node_labels_as) == FALSE) {
     if (node_labels_as == "state") {
@@ -1414,7 +1362,7 @@ plotAncStatesMAP <- function(t,
         )
     }
   }
-  
+
   # add tip states labels (text)
   if (tip_labels_states == TRUE) {
     if (state_pos_str_base[1] == "anc_state_") {
@@ -1435,7 +1383,7 @@ plotAncStatesMAP <- function(t,
         )
     }
   }
-  
+
   # add custom colors, shapes, and sizes
   if (is.null(node_size_as) == FALSE) {
     p <-
@@ -1458,7 +1406,7 @@ plotAncStatesMAP <- function(t,
           breaks = names(colors)
         )
       }
-      
+
     } else if (node_color_as == "state_posterior" |
                node_color_as == "node_posterior") {
       if (cladogenetic) {
@@ -1479,21 +1427,21 @@ plotAncStatesMAP <- function(t,
       p + ggplot2::scale_shape_manual(values = node_shape,
                                       name = .titleFormat(node_shape_as))
   }
-  
+
   # add space on x axis for tip labels
   if (tip_labels == TRUE) {
     if (timeline == FALSE) {
       p <- p + ggtree::xlim(0, tree_height + tree_height / 2)
     }
   }
-  
+
   return(p)
 }
 
 plotAncStatesPie <- function(t,
                              # option for plotting shoulder states
                              cladogenetic = FALSE,
-                             
+
                              # label taxa at tips
                              tip_labels = TRUE,
                              tip_labels_size = 2,
@@ -1501,24 +1449,24 @@ plotAncStatesPie <- function(t,
                              tip_labels_italics = FALSE,
                              tip_labels_formatted = FALSE,
                              tip_labels_remove_underscore = TRUE,
-                             
+
                              # label states at tips
                              tip_labels_states = FALSE,
                              tip_labels_states_size = 2,
                              tip_labels_states_offset = 0.1,
-                             
+
                              # text labels at nodes
                              node_labels_as = NULL,
                              node_labels_size = 2,
                              node_labels_offset = 0.1,
-                             
+
                              # pies aesthetics
                              pie_colors = "default",
                              node_pie_size = 1,
                              shoulder_pie_size = node_pie_size,
                              tip_pies = TRUE,
                              tip_pie_size = 0.5,
-                             
+
                              # nudges to center pies
                              node_pie_nudge_x = 0,
                              node_pie_nudge_y = 0,
@@ -1526,15 +1474,15 @@ plotAncStatesPie <- function(t,
                              tip_pie_nudge_y = node_pie_nudge_y,
                              shoulder_pie_nudge_x = node_pie_nudge_x,
                              shoulder_pie_nudge_y = node_pie_nudge_y,
-                             
+
                              state_transparency = 0.75,
                              tree_layout = "rectangular",
-                             
+
                              timeline = FALSE,
                              geo = timeline,
                              geo_units = list("epochs", "periods"),
                              time_bars = timeline,
-                             
+
                              tree_color = "black",
                              tree_linewidth = 1,
                              ...) {
@@ -1553,7 +1501,7 @@ plotAncStatesPie <- function(t,
     stop("tip_labels_italics should be TRUE or FALSE")
   if (is.logical(tip_labels_formatted) == FALSE)
     stop("tip_labels_formatted should be TRUE or FALSE")
-  if (tip_labels_italics == TRUE & tip_labels_formatted == TRUE) 
+  if (tip_labels_italics == TRUE & tip_labels_formatted == TRUE)
     stop("tip_labels_italics and tip_labels_formatted may not both be TRUE")
   if (is.logical(tip_labels_remove_underscore) == FALSE)
     stop("tip_labels_remove_underscore should be TRUE or FALSE")
@@ -1645,43 +1593,43 @@ plotAncStatesPie <- function(t,
   if (is.list(geo_units)) {
     if (length(geo_units) != 2)
       stop(
-        "geo_units should be 'periods', 'epochs', 'stages', 'eons', 
+        "geo_units should be 'periods', 'epochs', 'stages', 'eons',
          'eras', or a list of two of those units, such as:
         list('epochs','periods')"
       )
-    if (geo_units[[1]] %in% 
+    if (geo_units[[1]] %in%
         c('periods', 'epochs', 'stages', 'eons', 'eras')  == FALSE)
       stop(
-        "geo_units should be 'periods', 'epochs', 'stages', 'eons', 
+        "geo_units should be 'periods', 'epochs', 'stages', 'eons',
          'eras', or a list of two of those units, such as:
         list('epochs','periods')"
       )
-    if (geo_units[[2]] %in% 
+    if (geo_units[[2]] %in%
         c('periods', 'epochs', 'stages', 'eons', 'eras')  == FALSE)
       stop(
-        "geo_units should be 'periods', 'epochs', 'stages', 'eons', 
+        "geo_units should be 'periods', 'epochs', 'stages', 'eons',
          'eras', or a list of two of those units, such as:
         list('epochs','periods')"
       )
   } else {
-    if (geo_units %in% 
+    if (geo_units %in%
         c('periods', 'epochs', 'stages', 'eons', 'eras') == FALSE)
       stop(
-        "geo_units should be 'periods', 'epochs', 'stages', 'eons', 
+        "geo_units should be 'periods', 'epochs', 'stages', 'eons',
          'eras', or a list of two of those units, such as:
         list('epochs','periods')"
       )
   }
-  
+
   ##### create basic tree plot #####
   p <- ggtree::ggtree(t, layout = tree_layout,
                       color = tree_color, linewidth = tree_linewidth, ...)
-  
+
   #p <- ggtree::ggtree(t)
-  
+
   ##### specify temp directory for intermediary files #####
   tmp <- tempdir()
-  
+
   ##### calculate helper variables #####
   tree <- attributes(t)$phylo
   tree_height <- max(phytools::nodeHeights(t@phylo))
@@ -1690,20 +1638,20 @@ plotAncStatesPie <- function(t,
   node_idx <- (ntips + 1):n_node
   tip_idx <- 1:ntips
   all_idx <- 1:n_node
-  
+
   ##### transform nudge parameter #####
   tip_pie_nudge_x <- -tip_pie_nudge_x
   node_pie_nudge_x <- -node_pie_nudge_x
   shoulder_pie_nudge_x <- -shoulder_pie_nudge_x
-  
+
   ##### reorder labels #####
   state_labels <- as.factor(attributes(t)$state_labels)
-  
+
   ##### calculate pie sizes #####
   node_pie_size <-  node_pie_size / 30
   shoulder_pie_size <- shoulder_pie_size / 30
   tip_pie_size <- tip_pie_size / 30
-  
+
   if (cladogenetic == TRUE) {
     state_pos_str_base <- c("end_state_", "start_state_")
   } else if (cladogenetic == FALSE &
@@ -1713,9 +1661,9 @@ plotAncStatesPie <- function(t,
              "anc_state_1" %in% colnames(p$data)) {
     state_pos_str_base <- "anc_state_"
   }
-  
+
   ##### color and label processing #####
-  
+
   # check if number of states exceeds default color palette options
   if (pie_colors[1] == "default") {
     nstates <- length(state_labels)
@@ -1725,7 +1673,7 @@ plotAncStatesPie <- function(t,
       pie_colors <- grDevices::colorRampPalette(colFun(12))(nstates)
     }
   }
-  
+
   # check if number of states not equal to provided colors
   if (pie_colors[1] != "default" &
       length(pie_colors) < length(state_labels)) {
@@ -1740,12 +1688,12 @@ plotAncStatesPie <- function(t,
       )
     )
   }
-  
+
   # add names to colors if none present
   if (is.null(names(pie_colors))) {
     names(pie_colors) <- state_labels
   }
-  
+
   # set colors, add "other" if necessary
   otherpp <- as.numeric(dplyr::pull(p$data,
                                     var = paste0(state_pos_str_base[1],
@@ -1759,25 +1707,25 @@ plotAncStatesPie <- function(t,
     } else {
       colors <- pie_colors
     }
-    
+
   } else if (sum(otherpp, na.rm = TRUE) != 0) {
-    
+
     state_labels <- as.factor(c(as.character(t@state_labels), "other"))
-    
+
     if ("anc_state_" %in% state_pos_str_base) {
       p$data$anc_state_other <- "other"
     }
     if ("end_state_" %in% state_pos_str_base) {
       p$data$end_state_other <- "other"
     }
-    
+
     # add other to user-set colors
     if (pie_colors[1] != "default") {
       pc_names <- names(pie_colors)
       pie_colors <- c(pie_colors, "grey50")
       names(pie_colors) <- c(pc_names, "other")
     }
-    
+
     # set default colors
     if (any(pie_colors == "default")) {
       nstates <- length(state_labels) - 1
@@ -1786,21 +1734,21 @@ plotAncStatesPie <- function(t,
     } else {
       colors <- pie_colors
     }
-    
+
   }
-  
+
   ##### reformat labels if necessary #####
   if (tip_labels_remove_underscore) {
     p$data$label <- gsub("_", " ", p$data$label)
   }
-  
+
   ##### start plotting #####
-  
+
   # add timeline
   if (timeline == TRUE) {
-    
+
     max_age <- tree_height
-    
+
     if (max_age > 100) {
       interval <- 50
     } else {
@@ -1855,7 +1803,7 @@ plotAncStatesPie <- function(t,
           bord = c("right", "top", "bottom"),
           neg  = TRUE
         )
-        
+
       }
     }
     #add axis title
@@ -1872,7 +1820,7 @@ plotAncStatesPie <- function(t,
         vx = -xline,
         vy = rep(-tick_height * 5 + tick_height, length(xline))
       )
-    
+
     p <-
       p + ggplot2::geom_segment(ggplot2::aes(
         x = 0,
@@ -1893,7 +1841,7 @@ plotAncStatesPie <- function(t,
         label = rev(xline),
         size = tip_labels_size
       )
-    
+
     # add vertical gray bars
     if (time_bars) {
       if (geo) {
@@ -1929,7 +1877,7 @@ plotAncStatesPie <- function(t,
                                                      (2 * tot)))
     }
   }
-  
+
   # add tip labels
   if (tip_labels == TRUE) {
     if (tip_labels_italics == TRUE) {
@@ -1940,7 +1888,7 @@ plotAncStatesPie <- function(t,
           offset = tip_labels_offset,
           parse = TRUE
         )
-    } 
+    }
     else if (tip_labels_formatted == TRUE ) {
       p <- p + ggtree::geom_tiplab(
         ggplot2::aes(label = label),
@@ -1954,7 +1902,7 @@ plotAncStatesPie <- function(t,
                                 offset = tip_labels_offset)
     }
   }
-  
+
   # set up guides
   if (cladogenetic == TRUE) {
     p <-
@@ -1972,7 +1920,7 @@ plotAncStatesPie <- function(t,
                                              size = 0),
                                  na.rm = TRUE,
                                  alpha = 0.0)
-    
+
     p <-
       p + ggtree::geom_tippoint(ggtree::aes(colour = factor(end_state_1),
                                             size = 0),
@@ -1988,7 +1936,7 @@ plotAncStatesPie <- function(t,
                                             size = 0),
                                 na.rm = TRUE,
                                 alpha = 0.0)
-    
+
     if ("other" %in% state_labels) {
       p <-
         p + ggtree::geom_nodepoint(ggtree::aes(colour = factor(end_state_other),
@@ -2011,7 +1959,7 @@ plotAncStatesPie <- function(t,
                                              size = 0),
                                  na.rm = TRUE,
                                  alpha = 0.0)
-    
+
   } else if (cladogenetic == FALSE &
              "anc_state_1" %in% colnames(t@data)) {
     p <-
@@ -2031,7 +1979,7 @@ plotAncStatesPie <- function(t,
                                    na.rm = TRUE,
                                    alpha = 0.0)
     }
-    
+
     p <-
       p + ggtree::geom_tippoint(ggtree::aes(colour = factor(anc_state_1),
                                             size = 0),
@@ -2049,8 +1997,8 @@ plotAncStatesPie <- function(t,
                                   na.rm = TRUE,
                                   alpha = 0.0)
     }
-    
-    
+
+
     if ("other" %in% state_labels) {
       p <-
         p + ggtree::geom_nodepoint(ggtree::aes(colour = factor(anc_state_other),
@@ -2058,7 +2006,7 @@ plotAncStatesPie <- function(t,
                                    na.rm = TRUE,
                                    alpha = 0.0)
     }
-    
+
   } else {
     p <-
       p + ggtree::geom_nodepoint(ggtree::aes(colour = factor(end_state_1),
@@ -2070,7 +2018,7 @@ plotAncStatesPie <- function(t,
                                              size = 0),
                                  na.rm = TRUE,
                                  alpha = 0.0)
-    
+
     if ("end_state_3" %in% colnames(t@data)){
       p <-
         p + ggtree::geom_nodepoint(ggtree::aes(colour = factor(end_state_3),
@@ -2078,8 +2026,8 @@ plotAncStatesPie <- function(t,
                                    na.rm = TRUE,
                                    alpha = 0.0)
     }
-    
-    
+
+
     p <-
       p + ggtree::geom_tippoint(ggtree::aes(colour = factor(end_state_1),
                                             size = 0),
@@ -2097,7 +2045,7 @@ plotAncStatesPie <- function(t,
                                   na.rm = TRUE,
                                   alpha = 0.0)
     }
-    
+
     if ("other" %in% state_labels) {
       p <-
         p + ggtree::geom_nodepoint(ggtree::aes(colour = factor(end_state_other),
@@ -2106,11 +2054,11 @@ plotAncStatesPie <- function(t,
                                    alpha = 0.0)
     }
   }
-  
+
   if (is.null(names(colors))) {
     breaks <- levels(state_labels)
   } else {breaks <- names(colors)}
-  
+
   p <-
     p + ggplot2::scale_color_manual(values = colors, breaks = breaks)
   p <-
@@ -2120,20 +2068,20 @@ plotAncStatesPie <- function(t,
                                                   list(size = 4, alpha = 1.0)),
                         order = 1)
   p <- p + ggplot2::guides(size = "none")
-  
+
   # import theme
   theme_transparent <- ggimage::theme_transparent()
-  
+
   # plot pies at nodes (and shoulders)
   if (cladogenetic == TRUE) {
-    
+
     # create state matrices (matrix of nodes (rows) and all
     # possible states (columns), values are pp. )
     state_probs <-
       .build_state_probs(t, state_labels, include_start_states = TRUE)
     dat_state_end <- state_probs$end
     dat_state_start <- state_probs$start
-    
+
     # make pie plots
     pies_start <-
       .nodepie(
@@ -2141,7 +2089,7 @@ plotAncStatesPie <- function(t,
         cols = 1:(ncol(dat_state_start) - 1),
         color = colors,
         alpha = state_transparency
-      ) 
+      )
     pies_end <-
       .nodepie(
         dat_state_end,
@@ -2149,13 +2097,13 @@ plotAncStatesPie <- function(t,
         color = colors,
         alpha = state_transparency
       )
-    
+
     # change 0s to avoid dividing by zero when calculating coordinates
     zeros <- which(dplyr::pull(p$data, "x") == 0)
     p$data[zeros, "x"] <- 0.0001
-    
+
     # convert pie plots to lists
-    
+
     # NODE PIES
     # save pies as images and plot as raster grobs
     pies_end_to_plot <- pies_end[node_idx]
@@ -2179,7 +2127,7 @@ plotAncStatesPie <- function(t,
     # adjust nudges
     df_pies_end$x <- df_pies_end$x - node_pie_nudge_x
     df_pies_end$y <- df_pies_end$y - node_pie_nudge_y
-    
+
     # SHOULDER PIES
     # save pies as images and plot as raster grobs
     results_start <- list()
@@ -2204,7 +2152,7 @@ plotAncStatesPie <- function(t,
     # adjust nudges
     df_pies_start$x <- df_pies_start$x - shoulder_pie_nudge_x
     df_pies_start$y <- df_pies_start$y - shoulder_pie_nudge_y
-    
+
     # save pies as images and plot as raster grobs
     # TIP PIES
     if (tip_pies == TRUE) {
@@ -2230,7 +2178,7 @@ plotAncStatesPie <- function(t,
       df_pies_tip$x <- df_pies_tip$x - tip_pie_nudge_x
       df_pies_tip$y <- df_pies_tip$y - tip_pie_nudge_y
     }
-    
+
     if (tip_pies == TRUE) {
       df_pies <- rbind(df_pies_end, df_pies_start, df_pies_tip)
       results <- c(results_end, results_start, results_tip)
@@ -2243,7 +2191,7 @@ plotAncStatesPie <- function(t,
       sizes <- c(rep(node_pie_size, nrow(df_pies_end)),
                  rep(shoulder_pie_size, nrow(df_pies_start)))
     }
-    
+
     p <-
       p + ggpp::geom_plot(data = df_pies,
                           mapping = ggplot2::aes(
@@ -2256,7 +2204,7 @@ plotAncStatesPie <- function(t,
                           hjust = 0.5,
                           vjust = 0.5
       )
-    
+
   } else {
     # create state matrices (matrix of nodes (rows) and all
     # possible states (columns), values are pp. )
@@ -2274,7 +2222,7 @@ plotAncStatesPie <- function(t,
       )
     zeros <- which(dplyr::pull(p$data, "x") == 0)
     p$data[zeros, "x"] <- 0.0001
-    
+
     # convert pie plots to lists
     # NODE PIES
     # save pies as images and plot as raster grobs
@@ -2299,8 +2247,8 @@ plotAncStatesPie <- function(t,
     # adjust nudges
     df_pies_anc$x <- df_pies_anc$x - node_pie_nudge_x
     df_pies_anc$y <- df_pies_anc$y - node_pie_nudge_y
-    
-    
+
+
     # TIP PIES
     if (tip_pies == TRUE) {
       pies_tip <- pies_anc[tip_idx]
@@ -2325,7 +2273,7 @@ plotAncStatesPie <- function(t,
       df_pies_tip$x <- df_pies_tip$x - tip_pie_nudge_x
       df_pies_tip$y <- df_pies_tip$y - tip_pie_nudge_y
     }
-    
+
     if (tip_pies == TRUE) {
       df_pies <- rbind(df_pies_anc, df_pies_tip)
       results <- c(results_anc, results_tip)
@@ -2336,8 +2284,8 @@ plotAncStatesPie <- function(t,
       results <- results_anc
       sizes <- rep(node_pie_size, nrow(df_pies_anc))
     }
-    
-    
+
+
     # save pies as images and plot as raster grobs
     p <-
       p + ggpp::geom_plot(data = df_pies,
@@ -2352,7 +2300,7 @@ plotAncStatesPie <- function(t,
                           vjust = 0.5
       )
   }
-  
+
   # add node labels (text)
   if (is.null(node_labels_as) == FALSE) {
     # add clado plotting data for node labels
@@ -2378,7 +2326,7 @@ plotAncStatesPie <- function(t,
       `%<+%` <- ggtree::`%<+%`
       p <- p %<+% shoulder_data
     }
-    
+
     if (node_labels_as == "state") {
       if (cladogenetic == TRUE) {
         p <-
@@ -2476,7 +2424,7 @@ plotAncStatesPie <- function(t,
         )
     }
   }
-  
+
   # add tip states labels (text)
   if (tip_labels_states == TRUE) {
     if (state_pos_str_base[1] == "anc_state_") {
@@ -2495,15 +2443,15 @@ plotAncStatesPie <- function(t,
       )
     }
   }
-  
+
   # add space on x axis for tip labels
   if (tip_labels == TRUE & timeline == FALSE) {
     p <- p + ggtree::xlim(0, tree_height + tree_height / 2)
   }
-  
+
   # clean up pngs
   unlink(paste0(tmp,"/.temp.png"))
-  
+
   return(p)
 }
 
@@ -2526,25 +2474,25 @@ plotStochMaps <- function(tree,
                           time_bars = timeline,
                           label_sampled_ancs = FALSE,
                           ...) {
-  
+
   # pull tree from list object if necessary
   if (inherits(tree,"list")) {
     if (length(tree) == 1){
       tree <- tree[[1]]
     } else {stop("tree should contain only one tree object")}
   }
-  
+
   if (inherits(tree,"list")) {
     if (length(tree) == 1){
       tree <- tree[[1]]
     } else {stop("tree should contain only one tree object")}
-  } 
-  
+  }
+
   p <-  plotTreeFull(
     tree = list(list(tree)),
     tree_layout = tree_layout,
     line_width = line_width,
-    
+
     tip_labels = tip_labels,
     tip_labels_italics = tip_labels_italics,
     tip_labels_formatted = tip_labels_formatted,
@@ -2552,39 +2500,39 @@ plotStochMaps <- function(tree,
     tip_labels_color = tip_labels_color,
     tip_labels_size = tip_labels_size,
     tip_labels_offset = tip_labels_offset,
-    
+
     timeline = timeline,
     geo_units = geo_units,
     geo = timeline,
     time_bars = timeline,
-    
+
     label_sampled_ancs = label_sampled_ancs,
-    
+
     node_age_bars = FALSE,
     age_bars_color = "blue",
     age_bars_colored_by = NULL,
-    
+
     node_labels = NULL,
     node_labels_color = "black",
     node_labels_size = 3,
     node_labels_offset = 0,
-    
+
     node_pp = FALSE,
     node_pp_shape = 16,
     node_pp_color = "black",
     node_pp_size = "variable",
-    
+
     branch_color = "black",
     color_branch_by = NULL,
-    
+
     tip_age_bars = FALSE,
     lineend = "square",
     ...
   )
-  
+
   if (colors[1] != "default") {
     # error checking
-    if (is.null(names(colors))) 
+    if (is.null(names(colors)))
     {stop("colors must be a NAMED vector of colors where names correspond to the character states")}
     states <- names(colors)
   } else {
@@ -2592,10 +2540,10 @@ plotStochMaps <- function(tree,
     colors <- colFun(length(states))
     names(colors) <- states
   }
-  
+
   dat <- dplyr::left_join(maps, p$data, by = "node")
-  
-  #set up colors 
+
+  #set up colors
   if (color_by == "MAP") {
     max <- apply(dat[, states], MARGIN = 1, which.max)
     seg_col <- colors[unlist(max)]
@@ -2611,10 +2559,10 @@ plotStochMaps <- function(tree,
     dat$seg_col <- seg_col
     names(seg_col) <- seg_col
   }
-  
+
   # horizontal segments
   dat_horiz <- dat[dat$vert == FALSE,]
-  
+
   seg_horiz <- data.frame(
     x    = dat_horiz$x - dat_horiz$x0,
     xend = dat_horiz$x - dat_horiz$x1,
@@ -2622,14 +2570,14 @@ plotStochMaps <- function(tree,
     yend = dat_horiz$y,
     col  = dat_horiz$seg_col
   )
-  
+
   #vertical segments
   dat_vert <- dat[dat$vert == TRUE,]
-  
+
   m <- match(x = dat_vert$parent, dat_vert$node)
   dat_vert$y_parent <- dat_vert[m, "y"]
   dat_vert$x_parent <- dat_vert[m, "x"]
-  
+
   seg_vert <- data.frame(
     x = dat_vert$x_parent,
     xend = dat_vert$x_parent,
@@ -2637,9 +2585,9 @@ plotStochMaps <- function(tree,
     yend = dat_vert$y_parent,
     col = dat_vert$seg_col
   )
-  
-  # plot! 
-  
+
+  # plot!
+
   p + ggplot2::geom_segment(
     data = seg_horiz,
     ggplot2::aes(
@@ -2662,14 +2610,14 @@ plotStochMaps <- function(tree,
         color = col
       ),
       lineend = "square",
-      size = line_width, 
-      
+      size = line_width,
+
     ) +
-    ggplot2::scale_color_manual(values = seg_col, 
+    ggplot2::scale_color_manual(values = seg_col,
                                 breaks = colors,
                                 name = "State",
                                 labels = names(colors))
-  
+
 }
 
 
@@ -2680,32 +2628,32 @@ processStochMaps <- function(tree,
                              num_intervals = 1000,
                              verbose = TRUE,
                              ...) {
-  
+
   # pull tree from list object if necessary
   if (inherits(tree,"list")) {
     if (length(tree) == 1){
       tree <- tree[[1]]
     } else {stop("tree should contain only one tree object")}
   }
-  
+
   if (inherits(tree,"list")) {
     if (length(tree) == 1){
       tree <- tree[[1]]
     } else {stop("tree should contain only one tree object")}
-  } 
-  
+  }
+
   # compute the number of states
   nstates <- length(states)
-  
+
   # create the index map
   map <- matchNodes(tree@phylo)
-  
+
   # either paths or simmap must be provided
   if ( !is.null(paths) ) { # samples in files
-    
+
     # read traces
     samples <- readTrace(paths, verbose = verbose, ...)
-    
+
     # combine multiple samples together
     if ( length(samples) > 1 ) {
       samples <- combineTraces(samples)
@@ -2713,14 +2661,14 @@ processStochMaps <- function(tree,
     } else {
       samples <- samples[[1]]
     }
-    
+
     # compute the number of samples
     nsamples <- nrow(samples)
-    
+
   } else if ( !is.null(simmap) ) { # samples in phytools format
-    
+
     message("Reformatting simmap objects")
-    
+
     # make the samples
     samples <- as.data.frame(do.call(rbind, lapply(simmap, function(simmap) {
       sapply(simmap$maps, function(edge) {
@@ -2728,31 +2676,31 @@ processStochMaps <- function(tree,
         return(paste0("{", paste0(paste0(names(edge),",", edge), collapse = ":"),"}"))
       })
     })))
-    
+
     # add a root edge
     root_edge_samples <- sapply(simmap, function(map) {
       return(paste0("{", tail(names(map$maps[[1]]), n = 1), ",0}"))
     })
     samples <- cbind(samples, root_edge_samples)
-    
+
     # get the nodes
     nodes <- c(tree@phylo$edge[,2], ape::Ntip(tree@phylo) + 1)
     colnames(samples) <- map$Rev[nodes]
-    
+
     # compute the number of samples
     nsamples <- length(simmap)
-    
+
   } else {
     stop("Please provide either a paths or simmap argument.")
   }
-  
+
   message("Processing stochastic maps")
-  
+
   # get the number of branches
   # including the root branch
   num_branches <- length(tree@phylo$edge.length) + 1
   root_index   <- ape::Ntip(tree@phylo) + 1
-  
+
   # get the dt
   root_age <- max(ape::branching.times(tree@phylo))
   if (!is.null(tree@phylo$root.edge)) {
@@ -2761,18 +2709,18 @@ processStochMaps <- function(tree,
     tree@phylo$root.edge <- 0
   }
   dt <- root_age / num_intervals
-  
+
   # loop over branches
   dfs <- vector("list", num_branches)
-  
+
   if (verbose) { pb <- txtProgressBar(min = 0, max = num_branches, initial = 0) }
-  
+
   for(i in 1:num_branches) {
-    
+
     # get the branch indexes
     R_index   <- map$R[i]
     Rev_index <- as.character(map[R_index,2])
-    
+
     # get the time points
     if ( R_index == root_index ) {
       this_edge_length <- tree@phylo$root.edge
@@ -2780,15 +2728,15 @@ processStochMaps <- function(tree,
       this_edge_length <- tree@phylo$edge.length[tree@phylo$edge[,2] == R_index]
     }
     these_pts <- seq(0, this_edge_length, by = dt)
-    
+
     # get the samples
     branch_samples <- samples[,Rev_index]
     branch_samples <- gsub("{", "", branch_samples, fixed = TRUE)
     branch_samples <- gsub("}", "", branch_samples, fixed = TRUE)
-    
+
     # split the per event
     branch_samples <- strsplit(branch_samples, ":")
-    
+
     # get the times per state
     branch_samples <- lapply(branch_samples, function(sample) {
       sample <- do.call(rbind, strsplit(sample, ","))
@@ -2798,7 +2746,7 @@ processStochMaps <- function(tree,
       # sample_times <- rev(sample_times) # turn this on for plotting the output from (old) tensorphylo runs
       return(cumsum(sample_times))
     })
-    
+
     # get the state per interval
     if ( this_edge_length == 0 ) {
       branch_states_per_interval <- t(t(match(names(unlist(branch_samples)), states)))
@@ -2807,60 +2755,60 @@ processStochMaps <- function(tree,
         match(names(sample)[findInterval(these_pts, sample) + 1], states)
       }))
     }
-    
+
     # compute probability of each state per interval
     branch_prob_per_state <- apply(branch_states_per_interval, 2, tabulate, nbins = nstates) / nsamples
     rownames(branch_prob_per_state) <- states
-    
+
     # now do the vertical segments
     vert_prob_per_state <- t(branch_prob_per_state[,ncol(branch_prob_per_state), drop = FALSE])
-    
+
     # make the df
     this_df <- data.frame(index = Rev_index, bl = this_edge_length, x0 = these_pts, x1 = c(these_pts[-1], this_edge_length), vert = FALSE)
     this_df <- cbind(this_df, t(branch_prob_per_state))
     vert_df <- cbind(data.frame(index = Rev_index, bl = this_edge_length, x0 = this_edge_length, x1 = this_edge_length, vert = TRUE), vert_prob_per_state)
-    this_df <- rbind(this_df, vert_df)        
-    
+    this_df <- rbind(this_df, vert_df)
+
     # store
     dfs[[i]] <- this_df
-    
+
     if (verbose) { setTxtProgressBar(pb,i) }
-    
+
   }
   if (verbose) { close(pb) }
-  
+
   # combine the branches
   dfs <- do.call(rbind, dfs)
-  
-  # get node instead of index 
+
+  # get node instead of index
   # node is R's standard numbering for nodes
-  # index is RevBayes specific 
+  # index is RevBayes specific
   colnames(map) <- c("node", "index")
   map$index  <- as.character(map$index)
   dfs <- dplyr::full_join(map,dfs, by = "index")
   dfs$index <- NULL
-  
+
   return(dfs)
-  
+
 }
 
 plotTreeFull <- function(tree,
-                         
+
                          timeline,
                          geo,
                          geo_units,
                          time_bars,
-                         
+
                          node_age_bars,
                          tip_age_bars,
                          age_bars_color,
                          age_bars_colored_by,
-                         
+
                          node_labels,
                          node_labels_color,
                          node_labels_size,
                          node_labels_offset,
-                         
+
                          tip_labels,
                          tip_labels_italics,
                          tip_labels_formatted,
@@ -2868,18 +2816,18 @@ plotTreeFull <- function(tree,
                          tip_labels_color,
                          tip_labels_size,
                          tip_labels_offset,
-                         
+
                          label_sampled_ancs,
-                         
+
                          node_pp,
                          node_pp_shape,
                          node_pp_color,
                          node_pp_size,
-                         
+
                          branch_color,
                          color_branch_by,
                          line_width,
-                         
+
                          tree_layout,
                          ...) {
   # enforce argument matching
@@ -2909,7 +2857,7 @@ plotTreeFull <- function(tree,
     stop("tip_labels_italics should be TRUE or FALSE")
   if (is.logical(tip_labels_formatted) == FALSE)
     stop("tip_labels_formatted should be TRUE or FALSE")
-  if (tip_labels_italics == TRUE & tip_labels_formatted == TRUE) 
+  if (tip_labels_italics == TRUE & tip_labels_formatted == TRUE)
     stop("tip_labels_italics and tip_labels_formatted may not both be TRUE")
   if (.isColor(tip_labels_color) == FALSE)
     stop("tip_labels_color should be a recognized color")
@@ -2954,29 +2902,29 @@ plotTreeFull <- function(tree,
   if (is.list(geo_units)) {
     if (length(geo_units) != 2)
       stop(
-        "geo_units should be 'periods', 'epochs', 'stages', 'eons', 
+        "geo_units should be 'periods', 'epochs', 'stages', 'eons',
          'eras', or a list of two of those units, such as:
         list('epochs','periods')"
       )
-    if (geo_units[[1]] %in% 
+    if (geo_units[[1]] %in%
         c('periods', 'epochs', 'stages', 'eons', 'eras')  == FALSE)
       stop(
-        "geo_units should be 'periods', 'epochs', 'stages', 'eons', 
+        "geo_units should be 'periods', 'epochs', 'stages', 'eons',
          'eras', or a list of two of those units, such as:
         list('epochs','periods')"
       )
-    if (geo_units[[2]] %in% 
+    if (geo_units[[2]] %in%
         c('periods', 'epochs', 'stages', 'eons', 'eras')  == FALSE)
       stop(
-        "geo_units should be 'periods', 'epochs', 'stages', 'eons', 
+        "geo_units should be 'periods', 'epochs', 'stages', 'eons',
          'eras', or a list of two of those units, such as:
         list('epochs','periods')"
       )
   } else {
-    if (geo_units %in% 
+    if (geo_units %in%
         c('periods', 'epochs', 'stages', 'eons', 'eras') == FALSE)
       stop(
-        "geo_units should be 'periods', 'epochs', 'stages', 'eons', 
+        "geo_units should be 'periods', 'epochs', 'stages', 'eons',
          'eras', or a list of two of those units, such as:
         list('epochs','periods')"
       )
@@ -3011,7 +2959,7 @@ plotTreeFull <- function(tree,
   }
   # grab single tree from input
   phy <- tree[[1]][[1]]
-  
+
   ### fix for trees with sampled ancestors ###
   phylo    <- phy@phylo
   node_map <- .matchNodesTreeData(phy, phylo)
@@ -3020,16 +2968,16 @@ plotTreeFull <- function(tree,
       as.character(node_map[match(as.numeric(phy@data$index),
                                   node_map$Rev), ]$R)
   }
-  
+
   ### set up tree layout ###
-  
+
   if (tree_layout == "cladogram") {
     tree_layout <- "rectangular"
     BL <- "none"
   } else {
     BL <- "branch.length"
   }
-  
+
   # initiate plot
   if (is.null(color_branch_by)) {
     pp <- ggtree::ggtree(
@@ -3051,7 +2999,7 @@ plotTreeFull <- function(tree,
       ...
     )
   }
-  
+
   #### parameter compatibility checks ###
   if (length(node_pp_color) == 2 &
       length(branch_color) == 2)
@@ -3059,7 +3007,7 @@ plotTreeFull <- function(tree,
       "You may only include variable colors for either node_pp_label or
       branch_color, not for both"
     )
-  
+
   #check that if user wants node_age_bars, there are dated intervals in  file
   if (node_age_bars == TRUE) {
     if (!"age_0.95_HPD" %in% colnames(phy@data))
@@ -3068,17 +3016,17 @@ plotTreeFull <- function(tree,
         in the treedata object."
       )
   }
-  
+
   # get dimensions
   n_node <- treeio::Nnode(phy)
   tree_height <- max(phytools::nodeHeights(phy@phylo))
   ntips <- sum(pp$data$isTip)
-  
+
   # reformat labels if necessary
   if (tip_labels_remove_underscore) {
     pp$data$label <- gsub("_", " ", pp$data$label)
   }
-  
+
   # check that if user wants to label sampled ancs,
   # there are sampled ancs in the files
   if (label_sampled_ancs == TRUE &
@@ -3089,7 +3037,7 @@ plotTreeFull <- function(tree,
       label_sampled_acs <- FALSE
     }
   }
-  
+
   # add timeline
   if (timeline == TRUE) {
     warning("Plotting with default axis label (Age (Ma))")
@@ -3108,10 +3056,10 @@ plotTreeFull <- function(tree,
       minmax <- t(matrix(unlist(pp$data$age_0.95_HPD), nrow = 2))
       max_age <- max(minmax, na.rm = TRUE)
     }
-    
+
     interval <- max_age / 5
     dx <- max_age %% interval
-    
+
     # add geo
     tick_height <- ntips / 100
     if (geo == TRUE) {
@@ -3171,7 +3119,7 @@ plotTreeFull <- function(tree,
                          dx, interval))
     )
     pp <- ggtree::revts(pp)
-    
+
     # add ma ticks and labels
     xline <- pretty(c(0, max_age))[pretty(c(0, max_age)) < max_age]
     df <-
@@ -3181,7 +3129,7 @@ plotTreeFull <- function(tree,
         vx = -xline,
         vy = rep(-tick_height * 5 + tick_height, length(xline))
       )
-    
+
     pp <-
       pp + ggplot2::geom_segment(ggplot2::aes(
         x = 0,
@@ -3202,7 +3150,7 @@ plotTreeFull <- function(tree,
         label = rev(xline),
         size = tip_labels_size
       )
-    
+
     # add vertical gray bars
     if (time_bars) {
       if (geo) {
@@ -3238,7 +3186,7 @@ plotTreeFull <- function(tree,
                          ggplot2::element_text(hjust = max_age / (2 * tot)))
     }
   }
-  
+
   # processing for node_age_bars and tip_age_bars
   if (node_age_bars == TRUE) {
     # Encountered problems with using geom_range to plot age HPDs in ggtree. It
@@ -3263,7 +3211,7 @@ plotTreeFull <- function(tree,
           return(as.numeric(z))
         }
       })
-    
+
     minmax <- t(matrix(unlist(pp$data$age_0.95_HPD), nrow = 2))
     bar_df <-
       data.frame(
@@ -3300,7 +3248,7 @@ plotTreeFull <- function(tree,
       if (length(age_bars_color) == 1) {
         age_bars_color <- colFun(2)[2:1]
       }
-      
+
       if ("sampled_ancestor" %in% colnames(pp$data) == TRUE) {
         sampled_tip_probs <-
           1 - as.numeric(pp$data$sampled_ancestor[pp$data$isTip == TRUE])
@@ -3308,13 +3256,13 @@ plotTreeFull <- function(tree,
       } else {
         sampled_tip_probs <- rep(1, sum(pp$data$isTip))
       }
-      
+
       pp$data$olena <-
         c(sampled_tip_probs,
           as.numeric(.convertAndRound(L =
                                         unlist(pp$data[pp$data$isTip == FALSE,
                                                        age_bars_colored_by]))))
-      
+
       bar_df <-
         dplyr::left_join(bar_df, pp$data, by = c("node_id" = "node"))
       bar_df <-
@@ -3343,7 +3291,7 @@ plotTreeFull <- function(tree,
         )
     }
   }
-  
+
   # label sampled ancestors
   if (label_sampled_ancs == TRUE &
       "sampled_ancestor" %in% colnames(pp$data)) {
@@ -3441,7 +3389,7 @@ plotTreeFull <- function(tree,
           hjust = 0
         )
     }
-    
+
     t_height <- ntips / 200
     df <- data.frame(
       x = sampled_ancs$x,
@@ -3456,9 +3404,9 @@ plotTreeFull <- function(tree,
         xend = vx,
         yend = vy
       ))
-    
+
   }
-  
+
   # add node labels (text)
   if (is.null(node_labels) == FALSE) {
     # catch some funkiness from importing an unrooted tree
@@ -3471,7 +3419,7 @@ plotTreeFull <- function(tree,
         .convertAndRound(L =
                            unlist(pp$data[pp$data$isTip == FALSE,
                                           node_labels])))
-    
+
     # change any NAs that got converted to characters back to NA
     pp$data$kula[pp$data$kula == "NA"] <- NA
     pp <- pp + ggtree::geom_text(
@@ -3482,7 +3430,7 @@ plotTreeFull <- function(tree,
       size = node_labels_size
     )
   }
-  
+
   # add tip labels (text)
   if (tip_labels == TRUE) {
     if (tip_age_bars == TRUE) {
@@ -3541,7 +3489,7 @@ plotTreeFull <- function(tree,
             hjust = 0,
             color = tip_labels_color,
             size = tip_labels_size,
-            parse = TRUE 
+            parse = TRUE
           )
       }
     } else {
@@ -3570,12 +3518,12 @@ plotTreeFull <- function(tree,
       }
     }
   }
-  
+
   # add node PP (symbols)
   if (node_pp == TRUE) {
     # reformat posterior
     pp$data$posterior <- as.numeric(pp$data$posterior)
-    
+
     if (length(node_pp_color) == 1 & node_pp_size == "variable") {
       pp <- pp + ggtree::geom_nodepoint(color = node_pp_color,
                                         ggplot2::aes(size = posterior),
@@ -3594,7 +3542,7 @@ plotTreeFull <- function(tree,
         )
     }
   }
-  
+
   # add branch coloration by variable
   if (is.null(color_branch_by) == FALSE) {
     #set default colors if none provided
@@ -3605,7 +3553,7 @@ plotTreeFull <- function(tree,
     pp$data[, col_num] <-
       as.numeric(as.data.frame(pp$data)[, col_num])
     name <- .titleFormat(color_branch_by)
-    pp <- pp + 
+    pp <- pp +
       ggplot2::aes(color = as.data.frame(pp$data)[, col_num]) +
       ggplot2::scale_color_gradient(
         low = branch_color[1],
@@ -3614,7 +3562,7 @@ plotTreeFull <- function(tree,
         name = name
       )
   }
-  
+
   # readjust axis for non-timeline plots
   if (timeline == FALSE & BL != "none") {
     if (node_age_bars == FALSE) {
@@ -3625,38 +3573,37 @@ plotTreeFull <- function(tree,
         nrow = 2
       )), na.rm = TRUE)
     }
-    
+
     if (tip_labels == TRUE) {
       xlim_max <- tree_height / 2
     } else {
       xlim_max <- 0
     }
-    
+
     pp <- pp + ggtree::xlim(xlim_min, xlim_max)
     pp <- ggtree::revts(pp)
-    
+
   }
-  
+
   # readjust axis for cladograms
   if (timeline == FALSE & BL == "none") {
     xlim_min <- range(pp$data$x)[1]
-    
+
     if (tip_labels == TRUE) {
       xlim_max <- range(pp$data$x)[2] * 1.5
     } else {
       xlim_max <- range(pp$data$x)[2]
     }
-    
+
     pp <- pp + ggtree::xlim(xlim_min, xlim_max)
-    
+
   }
-  
+
   return(pp)
 }
 
 
 # Non-exported utility functions for RevGadgets
-
 # set custom state labels
 .assign_state_labels <-
   function(t,
@@ -3671,7 +3618,7 @@ plotTreeFull <- function(tree,
     } else {
       state_pos_str_base <- c("anc_state_")
     }
-    
+
     # send error if state_labels are provided without names
     if (!is.null(state_labels) && is.null(names(state_labels))) {
       stop(
@@ -3679,7 +3626,7 @@ plotTreeFull <- function(tree,
         attributes(t)$data"
       )
     }
-    
+
     # make matrix of all anc state values
     col_num <- grep(state_pos_str_base[1], colnames(t@data))
     if (length(state_pos_str_base) > 1) {
@@ -3688,7 +3635,7 @@ plotTreeFull <- function(tree,
     }
     pps <- grep("_pp", colnames(t@data))
     columns <- col_num[!col_num %in% pps]
-    
+
     # change ? to NA
     if (missing_to_NA == TRUE) {
       for (c in columns) {
@@ -3698,9 +3645,9 @@ plotTreeFull <- function(tree,
         attributes(t)$data[[c]] <- x_state
       }
     }
-    
+
     all_anc_states <- unique(c(as.matrix(t@data[, columns])))
-    
+
     # send error if state labels are provided but there are any
     # states without a corresponding state label
     if (!is.null(state_labels) &&
@@ -3712,7 +3659,7 @@ plotTreeFull <- function(tree,
         paste0(sort(all_anc_states[all_anc_states != "NA"]), collapse = ", ")
       ))
     }
-    
+
     # generate state labels if none provided and not a chromosome analysis
     if (is.null(state_labels) == TRUE & labels_as_numbers == FALSE) {
       warning("State labels not provided by user.
@@ -3728,7 +3675,7 @@ plotTreeFull <- function(tree,
       }
       state_labels["other"] <- "other"
     }
-    
+
     # for chromosome analyses, just keep the names as is (numbers of chromos)
     if (is.null(state_labels) == TRUE & labels_as_numbers == TRUE) {
       state_labels <-
@@ -3737,13 +3684,13 @@ plotTreeFull <- function(tree,
       state_labels <- state_labels[-which(state_labels == "NA")]
       names(state_labels) <- state_labels
     }
-    
+
     # create list of ancestral state name tags
     state_pos_str_to_update <-
       c(unlist(lapply(1:n_states, function(x) {
         paste(state_pos_str_base, x, sep = "")
       })))
-    
+
     # overwrite state labels
     for (m in state_pos_str_to_update) {
       # get the states
@@ -3765,7 +3712,7 @@ plotTreeFull <- function(tree,
       }
       attributes(t)$data[[m]] <- x_state
     }
-    
+
     # Just add the USED state_labels here
     used_state_labels <-
       na.omit(unique(c(as.matrix(t@data[, columns]))))
@@ -3777,7 +3724,7 @@ plotTreeFull <- function(tree,
     } else {
       attributes(t)$state_labels <- sort(as.character(used_state_labels))
     }
-    
+
     return(t)
   }
 
@@ -3790,9 +3737,9 @@ plotTreeFull <- function(tree,
     n_states <- length(state_labels)
     n_tips <- length(attributes(t)$phylo$tip.label)
     n_node <- 2 * n_tips - 1
-    
+
     dat <- list()
-    
+
     if (include_start_states == TRUE) {
       state_tags <- c("end", "start")
     } else if (include_start_states == FALSE &
@@ -3802,11 +3749,11 @@ plotTreeFull <- function(tree,
                "end_state_1" %in% colnames(t@data)) {
       state_tags <- c("end")
     }
-    
+
     for (s in state_tags) {
       dat[[s]] <- data.frame(matrix(0, nrow = n_node, ncol = n_states))
       #dat[[s]] = cbind(node=1:n_node, dat[[s]])
-      
+
       for (i in 1:3)
       {
         m <- paste(s, "_state_", i, sep = "")
@@ -3815,7 +3762,7 @@ plotTreeFull <- function(tree,
           as.numeric(as.vector(attributes(t)$data$node)) # node index
         x_tmp <- as.vector(attributes(t)$data[[m]])
         pp_tmp <- as.numeric(as.vector(attributes(t)$data[[pp_str]]))
-        
+
         for (j in seq_len(length(x_tmp)))
         {
           if (!is.na(x_tmp[j])) {
@@ -3826,10 +3773,10 @@ plotTreeFull <- function(tree,
           }
         }
       }
-      
+
       # format column names
       colnames(dat[[s]]) <- as.vector(unlist(state_labels))
-      
+
       # add probs for >3rd state under "other" label
       rem_prob <- c()
       for (i in seq_len(nrow(dat[[s]]))) {
@@ -3850,7 +3797,7 @@ plotTreeFull <- function(tree,
     grep("end;", lines[start_tree_block:length(lines)],
          ignore.case = TRUE)[1] + start_tree_block - 1
   tree_block <- lines[start_tree_block:end_tree_block]
-  
+
   # look for translate block
   start_translations <-
     grep("translate", tree_block, ignore.case = TRUE)
@@ -3859,36 +3806,36 @@ plotTreeFull <- function(tree,
          tree_block[start_translations:length(tree_block)])[1] +
     start_translations -  1
   translations <- tree_block[start_translations:end_translations]
-  
+
   # grab only the numbers and taxa names
   translations <- translations[grep("[1-9]", translations)]
-  
+
   # remove commas
   translations <- gsub(",", "", translations)
-  
+
   # replace tabs with space
   translations <- gsub("\\\t", " ", translations)
-  
+
   # split at white space
   translations_split <- strsplit(translations, " ")
-  
+
   # strip out empty elements
   translation_table <-
     do.call(rbind, lapply(translations_split, function(x)
       x[x != ""]))
-  
+
   # create the data frame
   dictionary <-
     as.data.frame(translation_table, stringsAsFactors = FALSE)
   colnames(dictionary) <- c("number", "taxon")
-  
+
   return(dictionary)
 }
 
 .collect_probable_states <- function(p, p_threshold = 0.005) {
   labels <- c("end_state", "start_state")
   index <- c(1, 2, 3)
-  
+
   codes <- c()
   labels_pp <- c()
   for (l in labels) {
@@ -3912,23 +3859,23 @@ plotTreeFull <- function(tree,
   # For some reason these are ordered differently than rate vectors
   interval_times <-
     sort(interval_times)
-  
+
   rate <- rates[[item]]
   rate <- rate[, grep("[0-9]", colnames(rate))]
-  
+
   #mean_rate <- colMeans(rate)
   summary_rate <- apply(rate, 2, summary)
   quantiles <- apply(rate, 2,
                      quantile,
                      probs = probs)
-  
+
   df <- dplyr::tibble(.rows = length(summary_rate))
   df["value"] <- summary_rate
   df["lower"] <- quantiles[1, ]
   df["upper"] <- quantiles[2, ]
   df$time <- interval_times
   df$item <- item
-  
+
   return(df)
 }
 
@@ -3964,9 +3911,9 @@ plotTreeFull <- function(tree,
          lines[start_tree_block:length(lines)],
          ignore.case = TRUE)[1] + start_tree_block - 1
   tree_block <- lines[start_tree_block:end_tree_block]
-  
+
   # pull out trees
-  
+
   # find all starting lines by searching for "tree"
   trees_start <- grep("tree ", tree_block, ignore.case = TRUE)
   # find all ending lines by searching for ";"
@@ -3984,10 +3931,10 @@ plotTreeFull <- function(tree,
          in trees in nexus files")
   }
   #  search  for  semicolon to signal end of line
-  
+
   # return tree strings
   return(tree_strings)
-  
+
 }
 
 # identify parent of a node
@@ -4005,7 +3952,7 @@ plotTreeFull <- function(tree,
   p <- ggplot2::ggplot(data, ggplot2::aes_(x=1, y=y, fill=fill)) +
     ggplot2::geom_bar(stat='identity', alpha=alpha, color=outline.color, linewidth=outline.size, show.legend = F) +
     ggplot2::coord_polar(theta='y') + ggtree::theme_inset()
-  
+
   if (methods::missingArg(color) == TRUE || is.null(color) == TRUE || any(is.na(color)) == TRUE) {
     ## do nothing
   } else {
@@ -4040,7 +3987,7 @@ plotTreeFull <- function(tree,
   names(labels) <- seq_len(length(labels))
   nodes <- lapply(pr[seq_len(length(pr))], dplyr::recode,!!!labels)
   nodes <- append(attributes(pr)$labels, nodes)
-  
+
   node_names <- numeric()
   node_names_op <- numeric()
   for (i in seq_len(length(nodes))) {
@@ -4089,7 +4036,7 @@ plotTreeFull <- function(tree,
              header = TRUE,
              sep = ",",
              colClasses = "character")
-  
+
   # get area names
   area_names <-
     unlist(lapply(range_color_list$range, function(y) {
@@ -4097,14 +4044,14 @@ plotTreeFull <- function(tree,
         return(y)
       }
     }))
-  
+
   # get state labels
   state_descriptions <-
     read.csv(label_fn,
              header = TRUE,
              sep = ",",
              colClasses = "character")
-  
+
   # map presence-absence ranges to area names
   range_labels <-
     unlist(lapply(state_descriptions$range[2:nrow(state_descriptions)],
@@ -4112,11 +4059,11 @@ plotTreeFull <- function(tree,
                     present <- as.vector(gregexpr(pattern = "1", x)[[1]])
                     paste(area_names[present], collapse = "")
                   }))
-  
+
   # map labels to colors
   range_colors <-
     range_color_list$color[match(range_labels, range_color_list$range)]
-  
+
   # generate state/color labels
   idx <- 1
   st_lbl <- list()
@@ -4127,7 +4074,7 @@ plotTreeFull <- function(tree,
   }
   st_colors[length(st_colors) + 1] <- "lightgray"
   st_lbl[["other"]] <- "other"
-  
+
   return(list(state_labels = st_lbl, state_color = st_colors))
 }
 
@@ -4150,20 +4097,20 @@ plotTreeFull <- function(tree,
   # recover()
   text <- sub("[^(]*", "", string)
   # stats <- treeio:::read.stats_beast_internal( "", text )
-  
+
   # stats <- .read.stats_revbayes_internal("", text)
   # tree <- ape::read.tree(text = text)
   # obj <- .beast("", text, stats, tree)
-  
+
   obj <- treeio::read.beast.newick(textConnection(text))
-  
+
   if ("index" %in% colnames(obj@data)) {
     obj@data$index <- as.character(obj@data$index)
   } else {
     warning("No index found in tree file.
             This file may not work with downstream plotting functions.")
   }
-  
+
   return(obj)
 }
 
@@ -4184,21 +4131,21 @@ plotTreeFull <- function(tree,
 # for reading in RevBayes output, especially if the number
 # of elements per line varies
 .readOutputFile <- function(path, burnin = 0.25) {
-  
+
   `%>%` <- dplyr::`%>%`
-  
-  res <- path %>% 
+
+  res <- path %>%
     readLines() %>%
     utils::tail(n = -1)
-  
-  names <- path %>% 
+
+  names <- path %>%
     readLines() %>%
     utils::head(n = 1) %>%
     strsplit("\t")
-  
+
   if (burnin >= length(res))
     stop("Burnin larger than provided trace file")
-  
+
   if (burnin >= 1) {
     res <- res[(burnin + 1):length(res)]
   } else if (burnin < 1 & burnin > 0) {
@@ -4209,31 +4156,31 @@ plotTreeFull <- function(tree,
   } else {
     stop("What have you done?")
   }
-  
+
   names_to_exclude = c("Iteration|Replicate_ID|Posterior|Likelihood|Prior")
   cols_to_exclude = length(grep(pattern = names_to_exclude, names[[1]]))
-  
+
   res <- res %>%
     strsplit("\t")
-  
+
   if (cols_to_exclude > 0) {
     res <- res %>%
       lapply(function(x) utils::tail(x, n = -cols_to_exclude))
   }
-  
+
   res <- res %>%
     lapply(as.numeric)
-  
+
   return(res)
 }
 
 .readNexusTrees <- function(path, burnin, verbose) {
   # read the lines
   lines <- readLines(path)
-  
+
   # the line with a tree
   tree_strings <- .findTreeLines(lines)
-  
+
   # discard burnin (if provided)
   if (burnin >= 1) {
     tree_strings <- tree_strings[(burnin + 1):length(tree_strings)]
@@ -4245,7 +4192,7 @@ plotTreeFull <- function(tree,
   } else {
     stop("What have you done?")
   }
-  
+
   # get the trees
   n_trees <- length(tree_strings)
   if (verbose == TRUE) {
@@ -4261,7 +4208,7 @@ plotTreeFull <- function(tree,
   if (verbose == TRUE) {
     close(bar)
   }
-  
+
   # translate using dictionary if translate block present in file
   if (length(grep("translate", lines, ignore.case = TRUE)) >= 1) {
     dictionary <- .buildTranslateDictionary(lines = lines)
@@ -4273,10 +4220,10 @@ plotTreeFull <- function(tree,
       }
     }
   }
-  
+
   # return the trees
   return(trees)
-  
+
 }
 
 .readTreeLogs <- function(path, tree_name, burnin, verbose) {
@@ -4288,15 +4235,15 @@ plotTreeFull <- function(tree,
       stringsAsFactors = FALSE,
       check.names = FALSE
     )
-  
+
   # check that there is a column with the given name
   if (tree_name %in% colnames(samples) == FALSE) {
     stop(paste0("No column named ", tree_name, " found."))
   }
-  
+
   # get the tree strings
   tree_strings <- samples[, tree_name]
-  
+
   # discard burnin (if provided)
   if (burnin >= 1) {
     tree_strings <- tree_strings[(burnin + 1):length(tree_strings)]
@@ -4308,7 +4255,7 @@ plotTreeFull <- function(tree,
   } else {
     stop("What have you done?")
   }
-  
+
   # get the trees
   n_trees <- length(tree_strings)
   if (verbose == TRUE) {
@@ -4324,10 +4271,10 @@ plotTreeFull <- function(tree,
   if (verbose == TRUE) {
     close(bar)
   }
-  
+
   # return the trees
   return(trees)
-  
+
 }
 
 # functionally the same as .rootNode, but our own function
@@ -4350,19 +4297,19 @@ plotTreeFull <- function(tree,
     # collection of changes becomes binomial
     # From this we can calculate the expected number of cells where a
     #shift occurs
-    
+
     # Move to log-scale
     shift <- log(shift_size)
-    
+
     # Probability of a shift for a value of zeta
     # We average the conditional p(shift | gamma) over p(gamma)
     quants <- seq(0.0001, 0.9999, length.out = 2000)
-    
+
     # Transform so we can look up quantiles under regular cauchy distribution
     quants <- 1.0 - (1.0 - quants) / 2.0
     probs <-
       1 / length(quants) # we're using quantiles, each gamma is equally likely
-    
+
     # Function to optimize
     fn <- function(zeta) {
       # Grid of gammas
@@ -4379,11 +4326,11 @@ plotTreeFull <- function(tree,
       # Distance to target
       return((log(this_expected_num_shifts) - log(prior_n_shifts)) ^ 2)
     }
-    
+
     # Find best value of zeta
     opts <- optimize(fn, c(0, 1))
     zeta <- opts$minimum
-    
+
     # Compute the prior on number of shifts for this zeta (to show user
     # how well we approximated the target)
     gammas <- qcauchy(quants, 0, zeta)
@@ -4392,7 +4339,7 @@ plotTreeFull <- function(tree,
         .pRightTailHorseshoeGrid(shift, x, grid_size = 2000) / 0.5
       return(p_shift_one_cell_this_gamma * (n_episodes - 1))
     }))
-    
+
     # Estimate the error of our chosen global scale hyperprior
     computed_num_expected_shifts <- sum(probs * num_expected_shifts)
     return(list(hyperprior = zeta, E.n = computed_num_expected_shifts))
@@ -4408,19 +4355,19 @@ plotTreeFull <- function(tree,
     # collection of changes becomes binomial
     # From this we can calculate the expected number of cells where a shift
     # occurs
-    
+
     # Move to log-scale
     shift <- log(shift_size)
-    
+
     # Probability of a shift for a value of zeta
     # We average the conditional p(shift | sigma) over p(sigma)
     quants <- seq(0.0001, 0.9999, length.out = 2000)
-    
+
     # Transform so we can look up quantiles under regular cauchy distribution
     quants <- 1.0 - (1.0 - quants) / 2.0
     probs <-
       1 / length(quants) # we're using quantiles, each gamma is equally likely
-    
+
     # Function to optimize
     fn <- function(zeta) {
       # Grid of sigmas
@@ -4437,11 +4384,11 @@ plotTreeFull <- function(tree,
       # Distance to target
       return((log(this_expected_num_shifts) - log(prior_n_shifts)) ^ 2)
     }
-    
+
     # Find best value of zeta
     opts <- optimize(fn, c(0, 1))
     zeta <- opts$minimum
-    
+
     # Compute the prior on number of shifts for this zeta (to show user how
     # well we approximated the target)
     sigmas <- qcauchy(quants, 0, zeta)
@@ -4450,7 +4397,7 @@ plotTreeFull <- function(tree,
         0.5
       return(p_shift_one_cell_this_sigma * (n_episodes - 1))
     }))
-    
+
     # Estimate the error of our chosen global scale hyperprior
     computed_num_expected_shifts <- sum(probs * num_expected_shifts)
     return(list(hyperprior = zeta, E.n = computed_num_expected_shifts))
@@ -4595,12 +4542,12 @@ reorder_treedata <- function(tdObject, order = "postorder") {
   phy <- ape::reorder.phylo(phy, order)
   index <- match(tdObject@phylo$tip.label, phy$tip.label)
   index.node <- match((ntips + 1):(ntips + phy$Nnode), phy$node.label)
-  
+
   tdObject@data <- tdObject@data[c(index, index.node), ]
   attributes(tdObject@data) <- dat.attr
   attributes(tdObject)$tip.label <- phy$tip.label
   tdObject@phylo <- phy
-  
+
   tdObject
 }
 
@@ -4619,13 +4566,13 @@ reorder_treedata <- function(tdObject, order = "postorder") {
     } else {
       state_pos_str_base <- c("anc_state_")
     }
-    
+
     # create list of ancestral state name tags
     state_pos_str_to_update <-
       c(unlist(lapply(1:n_states, function(x) {
         paste(state_pos_str_base, x, "_pp", sep = "")
       })))
-    
+
     # overwrite state labels
     for (m in state_pos_str_to_update)
     {
@@ -4652,7 +4599,7 @@ reorder_treedata <- function(tdObject, order = "postorder") {
   sampled_ancs    <- which(tabulate(phy$edge[, 1]) == 1)
   tip_indexes     <- 1:(num_tips + num_sampled_anc)
   node_indexes    <- (num_tips + num_sampled_anc) + num_nodes:1
-  
+
   node_map     <-
     data.frame(R = 1:(num_tips + num_nodes),
                Rev = NA,
@@ -4660,11 +4607,11 @@ reorder_treedata <- function(tdObject, order = "postorder") {
   current_node <- num_tips + 1
   k <- 1
   t <- 1
-  
+
   while (TRUE) {
     # compute the number of descendants of this tip
     current_num_descendants <- sum(phy$edge[, 1] == current_node)
-    
+
     if (current_node <= num_tips) {
       treedata_node <-
         which(as.character(treedata@data$node) == current_node)
@@ -4672,7 +4619,7 @@ reorder_treedata <- function(tdObject, order = "postorder") {
         as.numeric(treedata@data[treedata_node, ]$index)
       current_node <- phy$edge[phy$edge[, 2] == current_node, 1]
       t <- t + 1
-      
+
     } else if (current_node %in% sampled_ancs) {
       if (node_map$visits[node_map$R == current_node] == 0) {
         node_map$Rev[node_map$R == current_node] <- node_indexes[k]
@@ -4680,7 +4627,7 @@ reorder_treedata <- function(tdObject, order = "postorder") {
       }
       node_map$visits[node_map$R == current_node] <-
         node_map$visits[node_map$R == current_node] + 1
-      
+
       if (node_map$visits[node_map$R == current_node] == 1) {
         # go left
         current_node <- phy$edge[phy$edge[, 1] == current_node, 2][1]
@@ -4692,7 +4639,7 @@ reorder_treedata <- function(tdObject, order = "postorder") {
           current_node <- phy$edge[phy$edge[, 2] == current_node, 1]
         }
       }
-      
+
     } else {
       if (node_map$visits[node_map$R == current_node] == 0) {
         node_map$Rev[node_map$R == current_node] <- node_indexes[k]
@@ -4700,9 +4647,9 @@ reorder_treedata <- function(tdObject, order = "postorder") {
       }
       node_map$visits[node_map$R == current_node] <-
         node_map$visits[node_map$R == current_node] + 1
-      
+
       num_visits <- node_map$visits[node_map$R == current_node]
-      
+
       if (num_visits <= current_num_descendants) {
         # go to next descendant
         current_node <-
@@ -4716,13 +4663,13 @@ reorder_treedata <- function(tdObject, order = "postorder") {
           current_node <- phy$edge[phy$edge[, 2] == current_node, 1]
         }
       }
-      
+
     }
-    
+
   }
-  
+
   return(node_map[, 1:2])
-  
+
 }
 
 funcShaded <- function(x, qLower, qUpper, mean, sd) {
@@ -4750,8 +4697,8 @@ get_legend2 <- function(plot, legend = NULL) {
   }
   indices <- grep(pattern, gt$layout$name)
   not_empty <- !vapply(
-    gt$grobs[indices], 
-    inherits, what = "zeroGrob", 
+    gt$grobs[indices],
+    inherits, what = "zeroGrob",
     FUN.VALUE = logical(1)
   )
   indices <- indices[not_empty]
@@ -4763,116 +4710,113 @@ get_legend2 <- function(plot, legend = NULL) {
 
 
 ###################################################
-#                                                 #
-#                 Stateless pruning               #
-#                                                 #
+#                 State-independent pruning       #
 ###################################################
 postorder <- function(node_index, edge, tree, continuousChar,
                       μ, V, log_norm_factor, branch_lengths, alpha, sigma2, theta){
   ntip = length(tree$tip.label)
   #root_node = ntip + 1
-  
+
   # if is internal node
   if (node_index > ntip){
-    
+
     left_edge  = which(edge[,1] == node_index)[1] # index of left child edge
     right_edge = which(edge[,1] == node_index)[2] # index of right child edge
     left = edge[left_edge,2] # index of left child node
     right = edge[right_edge,2] # index of right child node
-    
+
     output_left <- postorder(left, edge, tree, continuousChar,
                              μ, V, log_norm_factor, branch_lengths, alpha, sigma2, theta)
     μ <- output_left[[1]]
     V <- output_left[[2]]
     log_norm_factor <- output_left[[3]]
-    
+
     output_right <- postorder(right, edge, tree, continuousChar,
                               μ, V, log_norm_factor, branch_lengths, alpha, sigma2, theta)
     μ <- output_right[[1]]
     V <- output_right[[2]]
     log_norm_factor <- output_right[[3]]
-    
-    
+
+
     bl_left = branch_lengths[left_edge] # all branch of left child edge
     bl_right = branch_lengths[right_edge] # all branch of right child edge
-    
+
     # 1) variance of the normal variable: this branch (v_left) and the subtree (V[left])
-    
+
     v_left = sigma2/(2*alpha) *expm1(2.0*alpha*bl_left)
     var_left = v_left + V[left] * exp(2.0 * alpha * bl_left)
-    
+
     v_right = sigma2/(2*alpha) *expm1(2.0*alpha*bl_right)
     var_right = v_right + V[right] * exp(2.0 * alpha * bl_right)
-    
+
     # 2) mean of the normal variable
     mean_left = exp(alpha*bl_left)*(μ[left] - theta) + theta
     mean_right = exp(alpha*bl_right)*(μ[right] - theta) + theta
-    
+
     ## compute the mean and variance of the node
     mean_ancestor = (mean_left * var_right + mean_right * var_left) / (var_left + var_right)
     μ[node_index] = mean_ancestor
     var_node = (var_left * var_right) / (var_left + var_right)
     V[node_index] = var_node
-    
+
     ## compute the normalizing factor, the left-hand side of the pdf of the normal variable
     log_nf_left = bl_left * alpha
     log_nf_right = bl_right * alpha
-    
+
     contrast = mean_left - mean_right
     a = -(contrast*contrast / (2*(var_left+var_right)))
     b = log(2*pi*(var_left+var_right))/2.0
     #b = log(2*pi)/2.0 + log(var_left+var_right)/2.0
     log_nf = log_nf_left + log_nf_right + a - b
     log_norm_factor[node_index] = log_nf
-    
-    
+
+
     return(list(μ, V, log_norm_factor))
   }
-  
-  
+
+
   # if is tip
   else{
     #edge_index = which(edge[,2] == node_index) # find edge index by tip node index
     #subedge = tree$maps[[edge_index]]
     species = tree$tip.label[node_index]
-    
+
     μ[node_index] = as.numeric(continuousChar[[which(names(continuousChar) == species)]])
     V[node_index] = 0.0 ## if there is no observation error
-    
+
     return(list(μ, V, log_norm_factor))
   }
 }
 
-
-## Pruning method (stateless)
+## Pruning algorithm (state-independent)
 logL_pruning <- function(tree, continuousChar, alpha, sigma2, theta){
   ntip = length(tree$tip.label) # number of tips
   edge = tree$edge # equals tree[:edge] in Julia
   n_edges = length(edge[,1]) # number of edges
   max_node_index = max(tree$edge) # total number of nodes
-  
+
   V = numeric(max_node_index)
   μ = numeric(max_node_index)
   log_norm_factor = numeric(max_node_index)
-  
+
   branch_lengths = tree$edge.length
-  
+
   root_index = ntip + 1
-  
-  
-  
-  
+
+
+
+
   output <- postorder(root_index, edge, tree, continuousChar,
                       μ, V, log_norm_factor, branch_lengths, alpha, sigma2, theta)
   μ <- output[[1]]
   V <- output[[2]]
   log_norm_factor <- output[[3]]
-  
+
   ## assume root value equal to theta
   μ_root = μ[root_index]
   v_root = V[root_index]
   lnl = dnorm(theta, mean = μ_root, sd = sqrt(v_root), log = TRUE) # are \theta and \mu in correct positions?
-  
+
   ## add norm factor
   for (log_nf in log_norm_factor){
     lnl = lnl + log_nf
@@ -4881,42 +4825,40 @@ logL_pruning <- function(tree, continuousChar, alpha, sigma2, theta){
 }
 
 ###################################################
-#                                                 #
 #            State-dependent pruning              #
-#                                                 #
 ###################################################
 sd_postorder <- function(node_index, edge, tree, continuousChar,
                          μ, V, log_norm_factor, subedges_lengths, alpha, sigma2, theta){
   ntip = length(tree$tip.label)
-  
+
   # if is internal node
   if (node_index > ntip){
-    
+
     left_edge  = which(edge[,1] == node_index)[1] # index of left child edge
     right_edge = which(edge[,1] == node_index)[2] # index of right child edge
     left = edge[left_edge,2] # index of left child node
     right = edge[right_edge,2] # index of right child node
-    
+
     output_left <- sd_postorder(left, edge, tree, continuousChar,
                                 μ, V, log_norm_factor, subedges_lengths, alpha, sigma2, theta)
     μ <- output_left[[1]]
     V <- output_left[[2]]
     log_norm_factor <- output_left[[3]]
-    
+
     output_right <- sd_postorder(right, edge, tree, continuousChar,
                                  μ, V, log_norm_factor, subedges_lengths, alpha, sigma2, theta)
     μ <- output_right[[1]]
     V <- output_right[[2]]
     log_norm_factor <- output_right[[3]]
-    
-    
+
+
     sub_bl_left = subedges_lengths[[left_edge]] # all subedges of left child edge
     sub_bl_right = subedges_lengths[[right_edge]] # all subedges of right child edge
-    
+
     # for the sake of readability, computation of variance, mean, and log_nf are done in separate loops
     # 1) variance of the normal variable: this branch (v_left) and the subtree (V[left])
     ## Is 'delta_left* exp(2.0 * alpha * bl_left)' added in each sub-edge?
-    
+
     delta_left = V[left]
     v_left = 0 # initialise v_left
     for (i in rev(1:length(sub_bl_left))){
@@ -4925,7 +4867,7 @@ sd_postorder <- function(node_index, edge, tree, continuousChar,
                                                          *sub_bl_left[[i]])
       delta_left = v_left + delta_left * exp(2.0 * alpha[[state]] * sub_bl_left[[i]])
     }
-    
+
     delta_right = V[right]
     v_right = 0 # initialise v_right
     for (i in rev(1:length(sub_bl_right))){
@@ -4933,30 +4875,30 @@ sd_postorder <- function(node_index, edge, tree, continuousChar,
       v_right = sigma2[[state]]/(2*alpha[[state]]) *expm1(2.0*alpha[[state]]*sub_bl_right[[i]])
       delta_right = v_right + delta_right * exp(2.0 * alpha[[state]] * sub_bl_right[[i]])
     }
-    
+
     var_left = delta_left
     var_right = delta_right
-    
+
     # 2) mean of the normal variable
     mean_left = μ[left]
     for (i in rev(1:length(sub_bl_left))){
       state <- names(sub_bl_left[i])
       mean_left = exp(alpha[[state]]*sub_bl_left[[i]])*(mean_left - theta[[state]]) + theta[[state]]
     }
-    
+
     mean_right = μ[right]
     for (i in rev(1:length(sub_bl_right))){
       state <- names(sub_bl_right[i])
       mean_right = exp(alpha[[state]]*sub_bl_right[[i]])*(mean_right - theta[[state]]) + theta[[state]]
     }
-    
-    
+
+
     ## compute the mean and variance of the node
     mean_ancestor = (mean_left * var_right + mean_right * var_left) / (var_left + var_right)
     μ[node_index] = mean_ancestor
     var_node = (var_left * var_right) / (var_left + var_right)
     V[node_index] = var_node
-    
+
     ## compute the normalizing factor, the left-hand side of the pdf of the normal variable
     ## this is the problem. I think in RevBayes we compute log_nf with the oldest sub-edge only
     log_nf_left = 0
@@ -4964,31 +4906,31 @@ sd_postorder <- function(node_index, edge, tree, continuousChar,
       state <- names(sub_bl_left[i])
       log_nf_left = log_nf_left + sub_bl_left[[i]] * alpha[[state]]
     }
-    
+
     log_nf_right = 0
     for (i in rev(1:length(sub_bl_right))){
       state <- names(sub_bl_right[i])
       log_nf_right = log_nf_right + sub_bl_right[[i]] * alpha[[state]]
     }
-    
+
     contrast = mean_left - mean_right
     a = -(contrast*contrast / (2*(var_left+var_right)))
     b = log(2*pi*(var_left+var_right))/2.0
     #b = log(2*pi)/2.0 + log(var_left+var_right)/2.0
     log_nf = log_nf_left + log_nf_right + a - b
     log_norm_factor[node_index] = log_nf
-    
+
     return(list(μ, V, log_norm_factor))
   }
-  
-  
+
+
   # if is tip
   else{
     species = tree$tip.label[node_index]
-    
+
     μ[node_index] = as.numeric(continuousChar[[which(names(continuousChar) == species)]])
     V[node_index] = 0.0 ## if there is no observation error
-    
+
     return(list(μ, V, log_norm_factor))
   }
 }
@@ -4998,21 +4940,21 @@ sd_logL_pruning <- function(tree, continuousChar, alpha, sigma2, theta){
   edge = tree$edge # equals tree[:edge] in Julia
   n_edges = length(edge[,1]) # number of edges
   max_node_index = max(tree$edge) # total number of nodes
-  
+
   V = numeric(max_node_index)
   μ = numeric(max_node_index)
   log_norm_factor = numeric(max_node_index)
-  
+
   subedges_lengths = tree$maps
-  
+
   root_index = ntip + 1
-  
+
   output <- sd_postorder(root_index, edge, tree, continuousChar,
                          μ, V, log_norm_factor, subedges_lengths, alpha, sigma2, theta)
   μ <- output[[1]]
   V <- output[[2]]
   log_norm_factor <- output[[3]]
-  
+
   ## assume root value equal to theta
   μ_root = μ[root_index]
   v_root = V[root_index]
@@ -5021,7 +4963,7 @@ sd_logL_pruning <- function(tree, continuousChar, alpha, sigma2, theta){
   ### note here
   root_state = names(head(left_subedges_from_root, 1)) # obtain root state, assuming it equals last state at left child edge
   lnl = dnorm(theta[[root_state]], mean = μ_root, sd = sqrt(v_root), log = TRUE)
-  
+
   ## add norm factor
   for (log_nf in log_norm_factor){
     lnl = lnl + log_nf
@@ -5031,9 +4973,7 @@ sd_logL_pruning <- function(tree, continuousChar, alpha, sigma2, theta){
 
 
 ###################################################
-#                                                 #
-#                  Stateless vcv                  #
-#                                                 #
+#                  State-independent vcv          #
 ###################################################
 logL_vcv <- function(tree, continuousChar, alpha, sigma2, theta){
   ntip <- length(tree$tip.label)
@@ -5044,14 +4984,14 @@ logL_vcv <- function(tree, continuousChar, alpha, sigma2, theta){
   tia <- times[1:ntip] - ta
   tja <- t(tia)
   tij <- tja + tia # distance in time unit between two tips
-  
+
   vy = sigma2 / (2*alpha)
-  
+
   #V = vy * (1 - exp(-2 * alpha * ta)) * exp(-alpha * tij)
   V = vy * -1 * expm1(-2 * alpha * ta) * exp(-alpha * tij) ### ta = time tgt; tij = time not tgt (sum of two branches)
-  
+
   X = matrix(1, ntip)
-  
+
   C = chol(V) # upper triangular matrix
   L = t(C) # lower triangular matrix
   log_det_V = 0
@@ -5059,28 +4999,26 @@ logL_vcv <- function(tree, continuousChar, alpha, sigma2, theta){
     log_det_V = log_det_V + log(L[i,i])
   }
   log_det_V = log_det_V *2.0 # equals to julia implementation to 12 sig. fig.
-  
+
   y = NULL
   for (species in tree$tip.label){
     y[species] = as.numeric(continuousChar[species])
   }
-  
+
   r = solve(L) %*% y - solve(L) %*% X * theta # what does de-correlated residuals mean?
-  
+
   # res = - (n/2) * log(2*pi) - 0.5 * log_det_V - 0.5 * dot(r, r)
   #     = exp(-n/2)^(2*pi) * exp(-0.5)^det_V * exp(-0.5)^dot(r, r) ?
   res = 0.0
   res = res - 0.5 * ntip * log(2*pi)
   res = res - 0.5 * log_det_V
   res = res - 0.5 * dot(r, r) # what is r and what is  dot product of r?
-  
+
   return(res)
 }
 
 ###################################################
-#                                                 #
 #               State-dependent vcv               #
-#                                                 #
 ###################################################
 
 # find parent node by providing child node
@@ -5104,21 +5042,21 @@ lineage.constructor <- function(tree, root_node, e){
   nodes <- nodesAlongLineage(tree, root_node, e)
   edges <- which(tree$edge[,2] %in% nodes) # from root to tip
   subedge_lengths <- rev(unlist(lapply(edges, function(i) tree$maps[[i]]))) # tip to root
-  
+
   state_changes <- names(subedge_lengths) # from tip to root
   #state_changes <- c(state_changes[1], state_changes) # add root state, assuming root state equals the state of the closest subedge
-  
+
   #lineage$state_indicator <- lapply(all_states, function(x) {res <- match(lineage$state_changes, x); res[is.na(res)] <- 0; return(res)})
   #names(lineage$state_indicator) <- all_states
-  
+
   # recording time-related numbers of each subedge (root is a subedge with length = 0)
   #times <- cumsum(unname(subedge_lengths))
   #time_tip <- tail(times, n = 1)
-  
+
   #time_begin <- time_tip - c(0, head(times, n = -1))
   #time_end <- time_tip - times
   #time_span <- time_begin - time_end
-  
+
   return(tibble(state = state_changes,
                 #time_begin = time_begin,
                 #time_end = time_end,
@@ -5130,10 +5068,10 @@ weights.lineage <- function(tree, alpha, e){
   root_node = length(tree$tip.label) + 1
   lineage <- lineage.constructor(tree, root_node, e)
   lineage[["alpha"]] = unlist(alpha[lineage[["state"]]])
-  
+
   W = matrix(0, ncol = length(alpha), nrow = 1)
   colnames(W) = sort(names(alpha))
-  
+
   if (length(lineage[[1]]) > 1){
     lineage <- lineage %>%
       mutate(
@@ -5142,23 +5080,23 @@ weights.lineage <- function(tree, alpha, e){
         sum2_temp = -1 * alpha * time_span)
     lineage$exp1[length(lineage$exp1)] = 1
     lineage$sum2 = 0
-    
+
     for (i in 2:length(lineage[[1]])){
       lineage$sum2[i] = lineage$sum2_temp[i-1]
       lineage$sum2_temp[i] = lineage$sum2[i] + lineage$sum2_temp[i]
     }
-    
-    all_weights = lineage %>% mutate(exp_final = exp1 * exp(sum2)) %>% 
-      group_by(state) %>% 
+
+    all_weights = lineage %>% mutate(exp_final = exp1 * exp(sum2)) %>%
+      group_by(state) %>%
       summarise(weight = sum(exp_final))
-    
+
     for (i in 1:nrow(all_weights)){
       W[, all_weights$state[i]] = all_weights$weight[i]
     }
   } else {
     W[, lineage$state[1]] = 1
   }
-  
+
   return(W)
 }
 
@@ -5183,17 +5121,17 @@ cov.accum <- function(tree, mrca_node, alpha, sigma2){
     nodes <- nodesAlongLineage(tree, root_node, mrca_node)
     edges <- which(tree$edge[,2] %in% nodes) # from root to mcra_node
     subedge_lengths <- rev(unlist(lapply(edges, function(i) tree$maps[[i]]))) # from mcra_node to root
-    
+
     subedge_lengths <- tibble(state = names(subedge_lengths),
                               time_span = subedge_lengths,
                               alpha = unlist(alpha[names(subedge_lengths)]),
-                              sigma2 = unlist(sigma2[names(subedge_lengths)])) %>% 
+                              sigma2 = unlist(sigma2[names(subedge_lengths)])) %>%
       mutate(exp1 = -1 * expm1(-2 * alpha * time_span),
              sum2_temp = -2 * alpha * time_span)
     subedge_lengths$sum2= 0
-    
+
     if (length(subedge_lengths[[1]]) == 1){
-      subedge_lengths = subedge_lengths %>% 
+      subedge_lengths = subedge_lengths %>%
         mutate(cov = sigma2 / (2 * alpha) * exp1)
       cov_accum = subedge_lengths$cov[[1]]
     } else {
@@ -5201,11 +5139,11 @@ cov.accum <- function(tree, mrca_node, alpha, sigma2){
         subedge_lengths$sum2[i] = subedge_lengths$sum2_temp[i-1]
         subedge_lengths$sum2_temp[i] = subedge_lengths$sum2[i] + subedge_lengths$sum2_temp[i]
       }
-      cov_accum = subedge_lengths %>% mutate(exp3 = exp1 * exp(sum2)) %>% 
-        group_by(state) %>% 
-        summarise(sum4 = sum(sigma2 / (2 * alpha) * exp3)) %>% 
-        reframe(sum_final = sum(sum4)) %>% 
-        unlist() %>% 
+      cov_accum = subedge_lengths %>% mutate(exp3 = exp1 * exp(sum2)) %>%
+        group_by(state) %>%
+        summarise(sum4 = sum(sigma2 / (2 * alpha) * exp3)) %>%
+        reframe(sum_final = sum(sum4)) %>%
+        unlist() %>%
         unname()
     }
   }
@@ -5222,8 +5160,8 @@ cov.loss <- function(tree, mrca_node, alpha, tip){
     subedge_lengths <- rev(unlist(lapply(edges, function(i) tree$maps[[i]]))) # from mcra_node to root
     subedge_lengths <- tibble(time_span = subedge_lengths,
                               alpha = alpha[names(subedge_lengths)])
-    cov_loss_rate = subedge_lengths %>% 
-      mutate(sum1 = -1 * alpha * time_span) %>% 
+    cov_loss_rate = subedge_lengths %>%
+      mutate(sum1 = -1 * alpha * time_span) %>%
       reframe(sum_final = sum(sum1))
   }
   return(cov_loss_rate)
@@ -5266,9 +5204,9 @@ sd_logL_vcv <- function(tree, continuousChar, alpha, sigma2, theta){
 
   ntip <- length(tree$tip.label)
   V = vcv.matrix(tree, alpha, sigma2)
-  
+
   W = weight.matrix(tree, alpha)
-  
+
   C = chol(V) # upper triangular matrix
   L = t(C) # lower triangular matrix
   log_det_V = 0
@@ -5276,31 +5214,34 @@ sd_logL_vcv <- function(tree, continuousChar, alpha, sigma2, theta){
     log_det_V = log_det_V + log(L[i,i])
   }
   log_det_V = log_det_V * 2.0
-  
+
   y = NULL
   for (species in tree$tip.label){
     y[species] = as.numeric(continuousChar[species])
   }
-  
+
   # inverse of L
   r = solve(L) %*% y - solve(L) %*% W %*% theta
-  
+
   # res = - (n/2) * log(2*pi) - 0.5 * log_det_V - 0.5 * dot(r, r)
   #     = exp(-n/2)^(2*pi) * exp(-0.5)^det_V * exp(-0.5)^dot(r, r) ?
   res = 0.0
   res = res - (ntip/2) * log(2*pi)
   res = res - 0.5 * log_det_V
   res = res - 0.5 * dot(r, r) # is it dot product? what is dot product of r?
-  
+
   return(res)
 }
 
 
+###################################
+# for simulation-based validation #
+###################################
 processSimplexParameters <- function(analysis_name, rf=FALSE, rates=FALSE){
   all_dfs <- list.files(paste0("output/", analysis_name), recursive = TRUE)
   all_dfs <- all_dfs[which(str_ends(all_dfs, pattern = "posterior_samples.var"))]
   all_dfs <- paste0("output/", analysis_name, "/", all_dfs)
-  
+
   bar = txtProgressBar(style=3, width=40)
   ind = 1
   for (i in all_dfs){
@@ -5309,32 +5250,32 @@ processSimplexParameters <- function(analysis_name, rf=FALSE, rates=FALSE){
     df <- as_tibble(df)
     if (rf){
       df <- df %>%
-        mutate(rf = gsub("\\]", "", gsub("\\[", "", rf))) %>% 
+        mutate(rf = gsub("\\]", "", gsub("\\[", "", rf))) %>%
         separate(col=rf, into=c("rf[1]", "rf[2]", "rf[3]"), sep = ",")
     }
     if (rates){
       df <- df %>%
-        mutate(rates = gsub("\\]", "", gsub("\\[", "", rates))) %>% 
+        mutate(rates = gsub("\\]", "", gsub("\\[", "", rates))) %>%
         separate(col=rates, into=c("rates[1]", "rates[2]", "rates[3]", "rates[4]", "rates[5]", "rates[6]"), sep = ",")
     }
     write.table(df, file = i, quote = FALSE, sep = "\t", row.names = FALSE)
-    
+
     # increment the progress bar
     setTxtProgressBar(bar, ind / length(all_dfs))
     ind = ind + 1
   }
-  
+
   all_files <- list.files(paste0("output/", analysis_name), recursive = TRUE)
   all_rates <- all_files[which(str_ends(all_files, pattern = "rates.out"))]
   all_rates <- paste0("output/", analysis_name, "/", all_rates)
   all_rfs <- all_files[which(str_ends(all_files, pattern = "rf.out"))]
   all_rfs <- paste0("output/", analysis_name, "/", all_rfs)
-  
+
   if(rf){
     for (i in 1:length(all_rfs)){
       for (j in 1:3){
         rf <- gsub(",", "", read.table(file=all_rfs[i])[1,j+1])
-        
+
         outFile <- file(gsub(".out", paste0("[", j, "].out"), all_rfs[i]), "w")
         writeLines(rf, outFile)
         close(outFile)
@@ -5346,7 +5287,7 @@ processSimplexParameters <- function(analysis_name, rf=FALSE, rates=FALSE){
     for (i in 1:length(all_rates)){
       for (j in 1:6){
         rate <- gsub(",", "", read.table(file=all_rates[i])[1,j+1])
-        
+
         outFile <- file(gsub(".out", paste0("[", j, "].out"), all_rates[i]), "w")
         writeLines(rate, outFile)
         close(outFile)
@@ -5356,22 +5297,21 @@ processSimplexParameters <- function(analysis_name, rf=FALSE, rates=FALSE){
   }
 }
 
-
 processValidation <- function(analysis_name, n_reps = 1000, n_bins = 50) {
   library(coda)
-  
+
   if (missing(analysis_name)) {
     stop("Missing required argument: Analysis Name")
   }
-  
+
   # Define directories
   results_dir = paste0("results/", analysis_name)
   output_dir = paste0("output/", analysis_name)
-  
+
   # create directories
   dir.create(results_dir, showWarnings = FALSE)
-  
-  # function to read data from the file 
+
+  # function to read data from the file
   read_data <- function(file_path) {
     if (file.exists(file_path)) {
       df <- read_table(file = file_path, col_names = TRUE, show_col_types = FALSE)
@@ -5380,102 +5320,102 @@ processValidation <- function(analysis_name, n_reps = 1000, n_bins = 50) {
       return(NULL)
     }
   }
-  
-  # get the list of parameters 
-  parameters <- colnames(read_data(paste0(output_dir, 
+
+  # get the list of parameters
+  parameters <- colnames(read_data(paste0(output_dir,
                                           "/Validation_Sim_0/posterior_samples.var")))
   parameters <- parameters[-1]   # remove the first column ("Iteration")
-  
-  # exclude "branch_rates" if present 
+
+  # exclude "branch_rates" if present
   #parameters <- parameters[!(parameters %in% c("rf", "rates", "branch_rates"))]
-  
-  # Print list of parameters 
+
+  # Print list of parameters
   cat("parameters:\n", parameters, "\n\n")
-  
+
   # Iterate over each parameter
   for (param in parameters) {
-    # initialize variables 
-    coverage_probs <- data.frame(total_count = numeric(0), 
-                                 in_count = numeric(0), 
-                                 hpd_width = numeric(0), 
+    # initialize variables
+    coverage_probs <- data.frame(total_count = numeric(0),
+                                 in_count = numeric(0),
+                                 hpd_width = numeric(0),
                                  stringsAsFactors = FALSE)
     hpd_width <- seq(from = 0.0, to = 1.0, by = 1/n_bins)
-    
+
     for (i in 1:(n_bins+1)) {
       coverage_probs[i,] = c(total_count = 0, in_count = 0, hpd_width = hpd_width[i])
     }
-    
-    # initialize progress bar 
+
+    # initialize progress bar
     pb <- txtProgressBar(min = 0, max = n_reps, char = "*", style = 3)
-    
-    # iterate over each replication 
+
+    # iterate over each replication
     for (i in 1:n_reps) {
       setTxtProgressBar(pb, i)
-      
-      # read in the data 
-      data <- read_data(paste0(output_dir, 
-                               "/Validation_Sim_", 
-                               i-1, 
+
+      # read in the data
+      data <- read_data(paste0(output_dir,
+                               "/Validation_Sim_",
+                               i-1,
                                "/posterior_samples.var"))
       if (is.null(data)) next
-      
-      # extract samples 
+
+      # extract samples
       num_samples = nrow(data[,1])
-      
+
       x <- as.mcmc(data[round(0.25*num_samples):num_samples, param])
-      
+
       true_val_ext <- ifelse(str_starts(param, "rates") | str_starts(param, "rf"), ".out", ".txt")
-      true_val <- read.table(file=paste0(output_dir, 
-                                         "/Validation_Sim_", 
-                                         i-1, 
-                                         "/", 
-                                         param, 
+      true_val <- read.table(file=paste0(output_dir,
+                                         "/Validation_Sim_",
+                                         i-1,
+                                         "/",
+                                         param,
                                          true_val_ext))[1,1]
-      
-      # calculate coverage probabilities 
+
+      # calculate coverage probabilities
       for (k in 1:(n_bins + 1)) {
         hpd <- HPDinterval(x, prob = hpd_width[k])
         if (true_val >= hpd[1,1] && true_val <= hpd[1,2]){
           coverage_probs[k, "in_count"] <- coverage_probs[k, "in_count"] + 1
         }
         coverage_probs[k, "total_count"] <- coverage_probs[k, "total_count"] + 1
-      }      
+      }
     }
     close(pb)
-    
+
     # calculate frequency of coverage
     coverage_probs$freq = coverage_probs$in_count / coverage_probs$total_count
-    
-    # save coverage probabilities 
+
+    # save coverage probabilities
     saveRDS(coverage_probs, file = paste0(results_dir, "/", param, ".rds"))
-    
-    # print results to the screen 
+
+    # print results to the screen
     cat(param,"\n")
     cat("HPD-width:\t\t",hpd_width,"\n")
     cat("Coverage-freq:\t\t",coverage_probs$freq,"\n")
   }
 }
 
-generate_coverage_plots <- function(analysis_name, 
-                                    num_reps = 1000, 
-                                    num_bins = 50, 
-                                    results_dir, 
+generate_coverage_plots <- function(analysis_name,
+                                    num_reps = 1000,
+                                    num_bins = 50,
+                                    results_dir,
                                     figs_dir) {
   library(coda)
   library(ggplot2)
-  
+
   # Create directories if they don't exist
   dir.create(figs_dir, showWarnings = FALSE)
-  
+
   parameters <- gsub(".rds", "", list.files(results_dir))
-  
+
   # Iterate over each parameter
   plots <- list()
   i = 1
   for (param in parameters) {
     # Read coverage probabilities
     coverage_probs <- readRDS(file = paste0(results_dir, "/", param, ".rds"))
-    
+
     # Generate plot
     p <- ggplot(coverage_probs) +
       geom_bar(stat="identity", aes(x=hpd_width, y=freq), colour="lightgray", fill="lightgray") +
@@ -5483,7 +5423,7 @@ generate_coverage_plots <- function(analysis_name,
       xlab("HPD width") + ylab("coverage probability") + ggtitle(param) +
       geom_segment(aes(x=0, y=0, xend=1, yend=1), linetype="dashed", size=1.5, show.legend=FALSE) +
       theme(legend.position="none", plot.title = element_text(hjust = 0.5))
-    
+
     # Save plot
     plots[[i]] <- p
     i=i+1
@@ -5491,4 +5431,3 @@ generate_coverage_plots <- function(analysis_name,
   }
   return(plots)
 }
-

@@ -1,12 +1,10 @@
-
-##############################################################
-# RevBayes Example: Calculate state-dependent OU likelihoods
+###############################################
+# Validation for state-dependent OU models:
+# Calculating likelihoods
 #
+# authors:
 #
-# authors: Priscilla Lau
-#
-##############################################################
-
+################################################
 seed(1234)
 
 NREP   = 20

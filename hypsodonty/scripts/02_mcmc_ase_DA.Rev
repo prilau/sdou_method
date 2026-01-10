@@ -1,16 +1,12 @@
-################################################################################
+##################################################
+# Empirical example for state-dependent OU models:
+# Character history reconstruction with
+# data augmetation
 #
-# RevBayes Example: Testing hidden rates for state-dependent OU model
+# authors:
 #
-# authors: Priscilla Lau
-#
-################################################################################
+################################################
 
-#RUN_INDEX <- args[1]
-#out_dir <- args[2]
-#tree_data <- args[3]
-#disc_data <- args[4]
-#RUN_INDEX <- 2
 out_dir <- "output/ase_DA/"
 tree_data <- "data/artiodactyla_rescaled.tree"
 disc_data <- "data/artiodactyla_Discrete.nex"
@@ -44,15 +40,6 @@ avmvn = mvAVMVN(weight=20, waitBeforeLearning=500, waitBeforeUsing=1000)
 ########################################
 
 # make the Q matrix
-
-# make the Q matrix
-
-#allowed_rates ~ dnDirichlet(rep(1, 4)*10)
-#moves.append( mvBetaSimplex( allowed_rates, weight=2 ) )
-#moves.append( mvDirichletSimplex( allowed_rates, weight=2 ) )
-#avmvn.addVariable( allowed_rates )
-
-#all_rates := [ allowed_rates[1], 0, allowed_rates[2], allowed_rates[3], 0, allowed_rates[4] ]
 all_rates <- [ 1, 0, 1, 1, 0, 1 ]
 
 lambda ~ dnLognormal(ln(0.05), 0.4)
@@ -62,17 +49,12 @@ avmvn.addVariable(lambda)
 Q := fnFreeK(lambda*all_rates, rescaled=FALSE)
 
 # set root prior
-
-#rf_prior <- rep(1,num_disc_states)
-#rf ~ dnDirichlet( rf_prior )
-#moves.append( mvBetaSimplex( rf, weight=2 ) )
-#moves.append( mvDirichletSimplex( rf, weight=2 ) )
-#avmvn.addVariable( rf )
 rf <- simplex( rep( 1/3, 3 ) )
+
 moves.append( avmvn )
 
 X ~ dnPhyloCTMCDASiteIID(tree, Q, rootFrequencies=rf, type="Standard")
-X.clamp(disc)
+X.setValue(disc)
 
 # include proposals for the discrete character history
 moves.append( mvCharacterHistory(ctmc=X, qmap_site=Q, graph="node", proposal="rejection", weight=1000.0) )
@@ -91,10 +73,8 @@ char_hist := X.characterHistories()
 
 mymodel = model(X)
 
-#monitors.append( mnModel(filename=out_dir + "trace_run_" + RUN_INDEX + ".log", printgen=10) )
 monitors.append( mnModel(filename=out_dir + "trace.log", printgen=10) )
 monitors.append( mnScreen(printgen=500) )
-#monitors.append( mnFile( char_hist, filename=out_dir + "charhist_run_" + RUN_INDEX + ".log", printgen=10 ) )
 monitors.append( mnFile( char_hist, filename=out_dir + "charhist.log", printgen=10 ) )
 
 

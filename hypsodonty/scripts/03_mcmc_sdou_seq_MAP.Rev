@@ -1,22 +1,16 @@
-################################################################################
+##################################################
+# Empirical example for state-dependent OU models:
+# Sequential inference with MAP history
 #
-# RevBayes Example: Testing hidden rates for state-dependent OU model
+# authors:
 #
-# authors: Priscilla Lau
-#
-################################################################################
+################################################
 
-#RUN_INDEX <- args[1]
-#out_dir <- args[2]
-#tree_data <- args[3]
-#char_hist <- args[4]
-#cont_data <- args[5]
-
-#RUN_INDEX <- 1
 out_dir <- "output/sdou_seq/"
 tree_data <- "data/artiodactyla_rescaled.tree"
 hist_data <- "output/ase_SCM/MAP.tree"
 cont_data <- "data/artiodactyla_Continuous.nex"
+
 #######################
 # Reading in the Data #
 #######################
@@ -83,7 +77,6 @@ Y.clamp(cont)
 
 mymodel = model(Y)
 
-#monitors.append( mnModel(filename=out_dir + "trace_MAP_run_" + RUN_INDEX + ".log", printgen=10) )
 monitors.append( mnModel(filename=out_dir + "trace_MAP.log", printgen=10) )
 monitors.append( mnScreen(printgen=1000) )
 

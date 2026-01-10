@@ -1,13 +1,11 @@
-################################################################################
+###############################################
 #
-# RevBayes Validation Test: Ornstein-Uhlenbeck on a fixed tree
+# Validation for state-dependent OU models:
+#   Simulation-based calibration
 #
-# Model: Continuous character(s) evolve under Ornstein-Uhlenbeck model.
+# authors:
 #
-#
-# authors: Sebastian Hoehna
-#
-################################################################################
+###############################################
 
 ## Global settings
 
@@ -53,23 +51,23 @@ nbranches <- 2 * ntips - 2
 root_age <- tree.rootAge()
 
 # make the Q matrix
+rates ~ dnDirichlet([100, 100, 1, 100, 1, 1])
+moves.append( mvBetaSimplex( rates, weight=2 ) )
+moves.append( mvDirichletSimplex( rates, weight=2 ) )
+avmvn.addVariable( rates )
+
 lambda ~ dnLognormal(ln(0.05), 0.4)
 moves.append( mvScale(lambda, weight=1.0) )
 avmvn.addVariable( lambda )
 
-#rates ~ dnDirichlet(rep(1, num_disc_states*(num_disc_states-1))*10)
-#moves.append( mvBetaSimplex( rates, weight=2 ) )
-#moves.append( mvDirichletSimplex( rates, weight=2 ) )
-#avmvn.addVariable( rates )
-
-Q := fnJC(num_disc_states)
+Q := fnFreeK(rates, rescaled=FALSE)
 
 
 # make the data-augmented CTCM model
 X ~ dnPhyloCTMCDASiteIID(tree, Q, branchRates=lambda, type="Standard", nSites=1)
 
 # include proposals for the discrete character history
-moves.append( mvCharacterHistory(ctmc=X, qmap_site=Q, graph="node",   proposal="rejection", weight=200.0) )
+moves.append( mvCharacterHistory(ctmc=X, qmap_site=Q, graph="node",   proposal="rejection", weight=100.0) )
 moves.append( mvCharacterHistory(ctmc=X, qmap_site=Q, graph="branch", proposal="rejection", weight=100.0) )
 
 
@@ -129,9 +127,6 @@ mymcmc = mcmc(mymodel, monitors, moves)
 validation = validationAnalysis( mymcmc, NUM_VALIDATION_REPLICATES, directory="output/rtOp_rfSt" )
 validation.burnin(generations=0.1*NUM_MCMC_ITERATIONS,tuningInterval=100)
 validation.run(generations=NUM_MCMC_ITERATIONS)
-validation.summarize(coverageProbability=0.9)
-validation.summarize(coverageProbability=0.5)
-
 
 
 # you may want to quit RevBayes now

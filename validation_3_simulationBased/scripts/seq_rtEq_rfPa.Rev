@@ -69,7 +69,7 @@ moves.append( avmvn )
 # PhyloCTMC Model #
 ###################
 
-Y ~ dnPhyloOUSD(characterHistory=char_hist, alpha=alpha, theta=theta, sigma=sigma2^0.5, rootTreatment="optimum", nSites=1)
+Y ~ dnPhyloOUSD(characterHistory=char_hist, alpha=alpha, theta=theta, sigma=sigma2^0.5, rootTreatment="equilibrium", nSites=1)
 
 # attach the data
 Y.clamp(cont)

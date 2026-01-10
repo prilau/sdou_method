@@ -2,7 +2,7 @@
 # Validation for state-dependent OU models:
 # Calculating likelihoods
 #
-# authors:
+# authors: Priscilla Lau
 #
 ################################################
 seed(1234)

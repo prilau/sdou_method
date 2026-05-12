@@ -6,29 +6,45 @@ library(RevGadgets)
 library(tidyverse)
 source("../utility/functions.R")
 
-tree <- readTrees("data/artiodactyla_rescaled.tree")
 t <- read.tree("data/artiodactyla_rescaled.tree")
+unscaled_t <- read.tree("data/artiodactyla.tree")
+tree <- readTrees("data/artiodactyla_rescaled.tree")
+unscaled_tree <- tree
+unscaled_tree[[1]][[1]]@phylo$edge.length <- tree[[1]][[1]]@phylo$edge.length * max(node.depth.edgelength(unscaled_t))
 
 
 
 # process output
 ase_MAP <- processAncStates("output/ase_SCM/anc_states.tre",
                             state_labels=c("0"="Browsers", "1"="Mixed feeders", "2"="Grazers"))
+ase_MAP@phylo$edge.length <- ase_MAP@phylo$edge.length * max(node.depth.edgelength(unscaled_t))
 ase_da <- processAncStates("output/ase_DA/anc_states_marginal.log",
                            state_labels=c("0"="Browsers", "1"="Mixed feeders", "2"="Grazers"))
+ase_da@phylo$edge.length <- ase_da@phylo$edge.length * max(node.depth.edgelength(unscaled_t))
 ase_joint <- processAncStates("output/sdou_joint/anc_states_marginal.log",
                               state_labels=c("0"="Browsers", "1"="Mixed feeders", "2"="Grazers"))
+ase_joint@phylo$edge.length <- ase_joint@phylo$edge.length * max(node.depth.edgelength(unscaled_t))
+
 tb_MAP <- read.table("output/ase_SCM/charhist.log", header = TRUE, sep = "\t")
 simmap_MAP <- read.simmap(text=tb_MAP$simmap, format = "phylip")
 processed_MAP <- processStochMaps(tree=tree, simmap = simmap_MAP, states = c("0", "1", "2"))
+processed_MAP$bl <- processed_MAP$bl * max(node.depth.edgelength(unscaled_t))
+processed_MAP$x0 <- processed_MAP$x0 * max(node.depth.edgelength(unscaled_t))
+processed_MAP$x1 <- processed_MAP$x1 * max(node.depth.edgelength(unscaled_t))
 
 tb_da <- read.table("output/ase_DA/charhist.log", header = TRUE)
 simmap_da <- read.simmap(text=tb_da$char_hist, format = "phylip")
 processed_da <- processStochMaps(tree=tree, simmap = simmap_da, states = c("0", "1", "2"))
+processed_da$bl <- processed_da$bl * max(node.depth.edgelength(unscaled_t))
+processed_da$x0 <- processed_da$x0 * max(node.depth.edgelength(unscaled_t))
+processed_da$x1 <- processed_da$x1 * max(node.depth.edgelength(unscaled_t))
 
-tb_joint <- read.table("output/sdou_joint/charhist.log", header = TRUE)
+tb_joint <- read.table("output/sdou_joint/charhist_run_1.log", header = TRUE)
 simmap_joint <- read.simmap(text=tb_joint$char_hist, format = "phylip")
 processed_joint <- processStochMaps(tree=tree, simmap = simmap_joint, states = c("0", "1", "2"))
+processed_joint$bl <- processed_joint$bl * max(node.depth.edgelength(unscaled_t))
+processed_joint$x0 <- processed_joint$x0 * max(node.depth.edgelength(unscaled_t))
+processed_joint$x1 <- processed_joint$x1 * max(node.depth.edgelength(unscaled_t))
 
 colnames(processed_MAP)[6] = colnames(processed_da)[6] = 
   colnames(processed_joint)[6] = "Browsers"
@@ -36,6 +52,20 @@ colnames(processed_MAP)[7] = colnames(processed_da)[7] =
   colnames(processed_joint)[7] = "Mixed feeders"
 colnames(processed_MAP)[8] = colnames(processed_da)[8] = 
   colnames(processed_joint)[8] = "Grazers"
+
+write_rds(ase_MAP, "output/ase_MAP.rds")
+write_rds(ase_da, "output/ase_da.rds")
+write_rds(ase_joint, "output/ase_joint.rds")
+write_rds(processed_MAP, "output/processed_MAP.rds")
+write_rds(processed_da, "output/processed_da.rds")
+write_rds(processed_joint, "output/processed_joint.rds")
+
+ase_MAP <- read_rds("output/ase_MAP.rds")
+ase_da <- read_rds("output/ase_da.rds")
+ase_joint <- read_rds("output/ase_joint.rds")
+processed_MAP <- read_rds("output/processed_MAP.rds")
+processed_da <- read_rds("output/processed_da.rds")
+processed_joint <- read_rds("output/processed_joint.rds")
 
 ######################
 # stochastic mapping #
@@ -47,6 +77,9 @@ p1 <- plotAncStatesPie(t = ase_MAP,
                        pie_colors = c("Browsers"="#2c6e49",
                                       "Mixed feeders"="#adc178",
                                       "Grazers"="#7f4f24"),
+                       timeline = FALSE,
+                       time_bars = FALSE,
+                       geo=FALSE,
                        tip_pies = FALSE,
                        node_pie_size = 2,
                        tree_layout = "rectangular",
@@ -56,17 +89,28 @@ p1 <- plotAncStatesPie(t = ase_MAP,
   coord_flip() +
   scale_x_reverse()
 
-p2 <- plotStochMaps(tree=tree, maps = processed_MAP, color_by = "MAP",
+p2 <- plotStochMaps(tree=unscaled_tree, maps = processed_MAP, color_by = "MAP",
                     colors = c("Browsers"="#2c6e49",
                                "Mixed feeders"="#adc178",
                                "Grazers"="#7f4f24"),
                     tip_labels = FALSE,
+                    tip_labels_size=3,
+                    timeline = TRUE,
+                    geo=FALSE,
+                    time_bars = FALSE,
                     line_width=0.5
                     #tip_labels_size = 2,
                     #tip_labels_offset = 1
 ) +
   theme(legend.position = "none") +
   coord_flip()
+p2a <- plot_grid(p0w2, p2, ncol = 2, rel_widths = c(1,9)) +
+  draw_plot_label(label=c("Age (Ma)"),
+                  x=0.08,
+                  y=0.5,
+                  hjust=.5, vjust=.5, size=10, angle=90, fontface = "plain")
+# +
+#  coord_flip()
 
 #####################
 # data augmentation #
@@ -80,6 +124,11 @@ p3 <- plotAncStatesPie(t = ase_da,
                                       "Grazers"="#7f4f24"),
                        tip_pies = FALSE,
                        node_pie_size = 2,
+                       timeline = TRUE,
+                       time_bars = FALSE,
+                       geo=FALSE,
+                       tip_pies = FALSE,
+                       node_pie_size = 2,
                        tree_layout = "rectangular",
                        state_transparency = 0.9,
                        tree_linewidth = 0.5) +
@@ -89,11 +138,14 @@ p3 <- plotAncStatesPie(t = ase_da,
 
 
 
-p4 <- plotStochMaps(tree=tree, maps = processed_da, color_by = "MAP",
+p4 <- plotStochMaps(tree=unscaled_tree, maps = processed_da, color_by = "MAP",
                     colors = c("Browsers"="#2c6e49",
                                "Mixed feeders"="#adc178",
                                "Grazers"="#7f4f24"),
                     tip_labels = FALSE,
+                    timeline = TRUE,
+                    geo=FALSE,
+                    time_bars = FALSE,
                     line_width=0.5
                     #tip_labels_size = 2,
                     #tip_labels_offset = 1
@@ -107,10 +159,15 @@ p4 <- plotStochMaps(tree=tree, maps = processed_da, color_by = "MAP",
 #########
 
 p5 <- plotAncStatesPie(t = ase_joint,
+                       tip_labels = FALSE,
+                       #tip_labels_size = 2,
+                       #tip_labels_offset = 1,
                        pie_colors = c("Browsers"="#2c6e49",
                                       "Mixed feeders"="#adc178",
                                       "Grazers"="#7f4f24"),
-                       tip_labels = FALSE,
+                       timeline = FALSE,
+                       time_bars = FALSE,
+                       geo=FALSE,
                        tip_pies = FALSE,
                        node_pie_size = 2,
                        tree_layout = "rectangular",
@@ -122,11 +179,14 @@ p5 <- plotAncStatesPie(t = ase_joint,
 
 
 
-p6 <- plotStochMaps(tree=tree, maps = processed_joint, color_by = "MAP",
+p6 <- plotStochMaps(tree=unscaled_tree, maps = processed_joint, color_by = "MAP",
                     colors = c("Browsers"="#2c6e49",
                                "Mixed feeders"="#adc178",
                                "Grazers"="#7f4f24"),
                     tip_labels = FALSE,
+                    timeline = FALSE,
+                    geo=TRUE,
+                    time_bars = FALSE,
                     line_width=0.5
                     ) +
   theme(legend.position = "none") +
@@ -180,21 +240,31 @@ legend <- get_legend2(p0 + theme(legend.position = "right",
 #############
 # scm+joint #
 #############
-plot_left <- plot_grid(p0w, p1, p2,
-                       rel_heights = c(1,6,6),
-                       ncol=1) +
+p1a <- plot_grid(p0w2, p1, rel_widths = c(19,81))
+plot_left_lab <- plot_grid(p0w) +
   draw_plot_label(label=c("(a) Stochastic mapping"),
                   x=c(0.5),
-                  y=12.5/13,
+                  y=0.5,
                   hjust=.5, vjust=.5, size=10)
+  
+plot_left_lab <-  plot_grid(p0w2, plot_left_lab, rel_widths = c(19,81))
+  
 
-plot_left <- plot_grid(p0g, plot_left,
-                       ncol = 1, align = 'v',
-                       rel_heights = c(1,13)) +
+plot_left <- plot_grid(plot_left_lab, p1a, p2a,
+                       rel_heights = c(1,6,6),
+                       ncol=1, align="r")
+
+plot_left_lab_grey <- plot_grid(p0g) + 
   draw_plot_label(label=c("Discrete only"),
                   x=0.5,
-                  y=13.5/14,
+                  y=0.5,
                   hjust=.5, vjust=.5, size=12)
+plot_left_lab_grey <- plot_grid(p0w2, plot_left_lab_grey, rel_widths = c(19,81))
+
+plot_left <- plot_grid(plot_left_lab_grey, plot_left,
+                       ncol = 1, align = 'v',
+                       rel_heights = c(1,13))
+
 plot_mid <- p0w2
 plot_right <- plot_grid(p0w, p5, p6,
                         rel_heights = c(1,6,6),
@@ -213,11 +283,11 @@ plot_right <- plot_grid(p0g, plot_right,
                   hjust=.5, vjust=.5, size=12)
 
 plot_maps_scm_joint <- cowplot::plot_grid(plot_left, plot_mid, plot_right, legend,
-                                    rel_widths = c(1,0.01,1,0.6),
+                                    rel_widths = c(1/0.9,0.01,1,0.6),
                                     ncol=4)
 
 
-ggsave("figures/case_study_maps_scm_joint.pdf", plot_maps_scm_joint, width=6.5, height=5, units="in")
+ggsave("figures/case_study_maps_scm_joint2.pdf", plot_maps_scm_joint, width=6.75, height=5, units="in")
 
 
 ##########

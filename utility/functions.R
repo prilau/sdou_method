@@ -2470,8 +2470,8 @@ plotStochMaps <- function(tree,
                           tip_labels_offset = 0,
                           timeline = FALSE,
                           geo_units = list("epochs", "periods"),
-                          geo = timeline,
-                          time_bars = timeline,
+                          geo = FALSE,
+                          time_bars = FALSE,
                           label_sampled_ancs = FALSE,
                           ...) {
 
@@ -2503,8 +2503,8 @@ plotStochMaps <- function(tree,
 
     timeline = timeline,
     geo_units = geo_units,
-    geo = timeline,
-    time_bars = timeline,
+    geo = geo,
+    time_bars = time_bars,
 
     label_sampled_ancs = label_sampled_ancs,
 
@@ -2793,22 +2793,22 @@ processStochMaps <- function(tree,
 }
 
 plotTreeFull <- function(tree,
-
+                         
                          timeline,
                          geo,
                          geo_units,
                          time_bars,
-
+                         
                          node_age_bars,
                          tip_age_bars,
                          age_bars_color,
                          age_bars_colored_by,
-
+                         
                          node_labels,
                          node_labels_color,
                          node_labels_size,
                          node_labels_offset,
-
+                         
                          tip_labels,
                          tip_labels_italics,
                          tip_labels_formatted,
@@ -2816,18 +2816,18 @@ plotTreeFull <- function(tree,
                          tip_labels_color,
                          tip_labels_size,
                          tip_labels_offset,
-
+                         
                          label_sampled_ancs,
-
+                         
                          node_pp,
                          node_pp_shape,
                          node_pp_color,
                          node_pp_size,
-
+                         
                          branch_color,
                          color_branch_by,
                          line_width,
-
+                         
                          tree_layout,
                          ...) {
   # enforce argument matching
@@ -2959,7 +2959,7 @@ plotTreeFull <- function(tree,
   }
   # grab single tree from input
   phy <- tree[[1]][[1]]
-
+  
   ### fix for trees with sampled ancestors ###
   phylo    <- phy@phylo
   node_map <- .matchNodesTreeData(phy, phylo)
@@ -2968,16 +2968,16 @@ plotTreeFull <- function(tree,
       as.character(node_map[match(as.numeric(phy@data$index),
                                   node_map$Rev), ]$R)
   }
-
+  
   ### set up tree layout ###
-
+  
   if (tree_layout == "cladogram") {
     tree_layout <- "rectangular"
     BL <- "none"
   } else {
     BL <- "branch.length"
   }
-
+  
   # initiate plot
   if (is.null(color_branch_by)) {
     pp <- ggtree::ggtree(
@@ -2999,7 +2999,7 @@ plotTreeFull <- function(tree,
       ...
     )
   }
-
+  
   #### parameter compatibility checks ###
   if (length(node_pp_color) == 2 &
       length(branch_color) == 2)
@@ -3007,7 +3007,7 @@ plotTreeFull <- function(tree,
       "You may only include variable colors for either node_pp_label or
       branch_color, not for both"
     )
-
+  
   #check that if user wants node_age_bars, there are dated intervals in  file
   if (node_age_bars == TRUE) {
     if (!"age_0.95_HPD" %in% colnames(phy@data))
@@ -3016,17 +3016,17 @@ plotTreeFull <- function(tree,
         in the treedata object."
       )
   }
-
+  
   # get dimensions
   n_node <- treeio::Nnode(phy)
   tree_height <- max(phytools::nodeHeights(phy@phylo))
   ntips <- sum(pp$data$isTip)
-
+  
   # reformat labels if necessary
   if (tip_labels_remove_underscore) {
     pp$data$label <- gsub("_", " ", pp$data$label)
   }
-
+  
   # check that if user wants to label sampled ancs,
   # there are sampled ancs in the files
   if (label_sampled_ancs == TRUE &
@@ -3037,9 +3037,10 @@ plotTreeFull <- function(tree,
       label_sampled_acs <- FALSE
     }
   }
-
+  
   # add timeline
   if (timeline == TRUE) {
+    
     warning("Plotting with default axis label (Age (Ma))")
     if (node_age_bars == FALSE) {
       minmax <- phytools::nodeHeights(phy@phylo)
@@ -3056,12 +3057,12 @@ plotTreeFull <- function(tree,
       minmax <- t(matrix(unlist(pp$data$age_0.95_HPD), nrow = 2))
       max_age <- max(minmax, na.rm = TRUE)
     }
-
+    
     interval <- max_age / 5
     dx <- max_age %% interval
-
+    
     # add geo
-    tick_height <- ntips / 100
+    tick_height <- ntips / 80
     if (geo == TRUE) {
       #determine whether to include quaternary
       if (tree_height > 50) {
@@ -3109,7 +3110,7 @@ plotTreeFull <- function(tree,
     }
     #add axis title
     pp <- pp + ggplot2::scale_x_continuous(
-      name = "Age (Ma)",
+      #name = "Age (Ma)",
       expand = c(0, 0),
       limits = c(-max_age, tree_height /
                    2),
@@ -3119,23 +3120,23 @@ plotTreeFull <- function(tree,
                          dx, interval))
     )
     pp <- ggtree::revts(pp)
-
+    
     # add ma ticks and labels
     xline <- pretty(c(0, max_age))[pretty(c(0, max_age)) < max_age]
     df <-
       data.frame(
         x = -xline,
-        y = rep(-tick_height * 5, length(xline)),
+        y = rep(-tick_height * 8, length(xline)),
         vx = -xline,
-        vy = rep(-tick_height * 5 + tick_height, length(xline))
+        vy = rep(-tick_height * 8 + tick_height, length(xline))
       )
-
+    
     pp <-
       pp + ggplot2::geom_segment(ggplot2::aes(
         x = 0,
-        y = -tick_height * 5,
+        y = -tick_height * 8,
         xend = -max_age,
-        yend = -tick_height * 5
+        yend = -tick_height * 8
       )) +
       ggplot2::geom_segment(data = df, ggplot2::aes(
         x = x,
@@ -3146,18 +3147,18 @@ plotTreeFull <- function(tree,
       ggplot2::annotate(
         "text",
         x = -rev(xline),
-        y = -tick_height * 5 + tick_height * 2,
+        y = -tick_height * 8 + tick_height * 4,
         label = rev(xline),
         size = tip_labels_size
       )
-
+    
     # add vertical gray bars
     if (time_bars) {
       if (geo) {
         if ("epochs" %in% geo_units) {
-          x_pos <- -rev(c(0, deeptime::getScaleData("epochs")$max_age))
+          x_pos <- -rev(c(0, deeptime::get_scale_data("epochs")$max_age))
         } else {
-          x_pos <-  -rev(c(0, deeptime::getScaleData("periods")$max_age))
+          x_pos <-  -rev(c(0, deeptime::get_scale_data("periods")$max_age))
         }
       } else if (!geo) {
         x_pos <- -rev(xline)
@@ -3185,8 +3186,15 @@ plotTreeFull <- function(tree,
         ggplot2::theme(axis.title.x =
                          ggplot2::element_text(hjust = max_age / (2 * tot)))
     }
+    
+    xlim_min <- -tree_height
+    xlim_max <- 0
+    
+    pp <- pp + ggtree::xlim(xlim_min, xlim_max)
+    pp <- ggtree::revts(pp)
+    
   }
-
+  
   # processing for node_age_bars and tip_age_bars
   if (node_age_bars == TRUE) {
     # Encountered problems with using geom_range to plot age HPDs in ggtree. It
@@ -3211,7 +3219,7 @@ plotTreeFull <- function(tree,
           return(as.numeric(z))
         }
       })
-
+    
     minmax <- t(matrix(unlist(pp$data$age_0.95_HPD), nrow = 2))
     bar_df <-
       data.frame(
@@ -3248,7 +3256,7 @@ plotTreeFull <- function(tree,
       if (length(age_bars_color) == 1) {
         age_bars_color <- colFun(2)[2:1]
       }
-
+      
       if ("sampled_ancestor" %in% colnames(pp$data) == TRUE) {
         sampled_tip_probs <-
           1 - as.numeric(pp$data$sampled_ancestor[pp$data$isTip == TRUE])
@@ -3256,13 +3264,13 @@ plotTreeFull <- function(tree,
       } else {
         sampled_tip_probs <- rep(1, sum(pp$data$isTip))
       }
-
+      
       pp$data$olena <-
         c(sampled_tip_probs,
           as.numeric(.convertAndRound(L =
                                         unlist(pp$data[pp$data$isTip == FALSE,
                                                        age_bars_colored_by]))))
-
+      
       bar_df <-
         dplyr::left_join(bar_df, pp$data, by = c("node_id" = "node"))
       bar_df <-
@@ -3291,7 +3299,7 @@ plotTreeFull <- function(tree,
         )
     }
   }
-
+  
   # label sampled ancestors
   if (label_sampled_ancs == TRUE &
       "sampled_ancestor" %in% colnames(pp$data)) {
@@ -3389,7 +3397,7 @@ plotTreeFull <- function(tree,
           hjust = 0
         )
     }
-
+    
     t_height <- ntips / 200
     df <- data.frame(
       x = sampled_ancs$x,
@@ -3404,9 +3412,9 @@ plotTreeFull <- function(tree,
         xend = vx,
         yend = vy
       ))
-
+    
   }
-
+  
   # add node labels (text)
   if (is.null(node_labels) == FALSE) {
     # catch some funkiness from importing an unrooted tree
@@ -3419,7 +3427,7 @@ plotTreeFull <- function(tree,
         .convertAndRound(L =
                            unlist(pp$data[pp$data$isTip == FALSE,
                                           node_labels])))
-
+    
     # change any NAs that got converted to characters back to NA
     pp$data$kula[pp$data$kula == "NA"] <- NA
     pp <- pp + ggtree::geom_text(
@@ -3430,7 +3438,7 @@ plotTreeFull <- function(tree,
       size = node_labels_size
     )
   }
-
+  
   # add tip labels (text)
   if (tip_labels == TRUE) {
     if (tip_age_bars == TRUE) {
@@ -3518,12 +3526,12 @@ plotTreeFull <- function(tree,
       }
     }
   }
-
+  
   # add node PP (symbols)
   if (node_pp == TRUE) {
     # reformat posterior
     pp$data$posterior <- as.numeric(pp$data$posterior)
-
+    
     if (length(node_pp_color) == 1 & node_pp_size == "variable") {
       pp <- pp + ggtree::geom_nodepoint(color = node_pp_color,
                                         ggplot2::aes(size = posterior),
@@ -3542,7 +3550,7 @@ plotTreeFull <- function(tree,
         )
     }
   }
-
+  
   # add branch coloration by variable
   if (is.null(color_branch_by) == FALSE) {
     #set default colors if none provided
@@ -3562,7 +3570,7 @@ plotTreeFull <- function(tree,
         name = name
       )
   }
-
+  
   # readjust axis for non-timeline plots
   if (timeline == FALSE & BL != "none") {
     if (node_age_bars == FALSE) {
@@ -3573,34 +3581,35 @@ plotTreeFull <- function(tree,
         nrow = 2
       )), na.rm = TRUE)
     }
-
+    
     if (tip_labels == TRUE) {
       xlim_max <- tree_height / 2
     } else {
       xlim_max <- 0
     }
-
+    
     pp <- pp + ggtree::xlim(xlim_min, xlim_max)
     pp <- ggtree::revts(pp)
-
+    
   }
-
+  
   # readjust axis for cladograms
   if (timeline == FALSE & BL == "none") {
     xlim_min <- range(pp$data$x)[1]
-
+    
     if (tip_labels == TRUE) {
       xlim_max <- range(pp$data$x)[2] * 1.5
     } else {
       xlim_max <- range(pp$data$x)[2]
     }
-
+    
     pp <- pp + ggtree::xlim(xlim_min, xlim_max)
-
+    
   }
-
+  
   return(pp)
 }
+
 
 
 # Non-exported utility functions for RevGadgets

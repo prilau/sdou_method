@@ -103,7 +103,23 @@ p2 <- plotStochMaps(tree=unscaled_tree, maps = processed_MAP, color_by = "MAP",
                     #tip_labels_offset = 1
 ) +
   theme(legend.position = "none") +
-  coord_flip()
+  geom_cladelab(node=cervidae_node, label="", align=TRUE, angle=0, barcolour="#9a9a98ff",
+                hjust=0, barsize=1.25, offset=4, offset.text=0.025, extend=0.2) +
+  geom_cladelab(node=bovidae_node, label="", align=TRUE, angle=0, barsize=1.25, barcolour="#494a45ff",
+                hjust=0, vjust=6.5, offset=4, offset.text=0.025, extend=0.2) +
+  geom_cladelab(node=bovini_node, label="", align=TRUE, angle=0, barsize=1.5, barcolour="#f0cf91ff",
+                hjust=0, offset=2, offset.text=0.01, extend=0.2, fontsize=2.88) +
+  geom_cladelab(node=antilopini_node, label="", align=TRUE, angle=0, barsize=1.5, barcolour="#b2c5cfff",
+                hjust=0, offset=2, offset.text=0.01, extend=0.2, fontsize=2.88) +
+  geom_cladelab(node=cephalophini_node, label="", align=TRUE, angle=0, barsize=1.5, barcolour="#76a7abff",
+                hjust=0, offset=2, offset.text=0.01, extend=0.2, fontsize=2.88) +
+  geom_cladelab(node=caprini_node, label="", align=TRUE, angle=0, barsize=1.5, barcolour="#c5b0beff",
+                hjust=0, offset=2, offset.text=0.01, extend=0.2, fontsize=2.88)  +
+  coord_flip() +
+  xlim(-45,5)
+
+p2
+
 p2a <- plot_grid(p0w2, p2, ncol = 2, rel_widths = c(1,9)) +
   draw_plot_label(label=c("Age (Ma)"),
                   x=0.08,
@@ -190,7 +206,20 @@ p6 <- plotStochMaps(tree=unscaled_tree, maps = processed_joint, color_by = "MAP"
                     line_width=0.5
                     ) +
   theme(legend.position = "none") +
-  coord_flip()
+  geom_cladelab(node=cervidae_node, label="", align=TRUE, angle=0, barcolour="#9a9a98ff",
+                hjust=0, barsize=1.25, offset=4, offset.text=0.025, extend=0.2) +
+  geom_cladelab(node=bovidae_node, label="", align=TRUE, angle=0, barsize=1.25, barcolour="#494a45ff",
+                hjust=0, vjust=6.5, offset=4, offset.text=0.025, extend=0.2) +
+  geom_cladelab(node=bovini_node, label="", align=TRUE, angle=0, barsize=1.5, barcolour="#f0cf91ff",
+                hjust=0, offset=2, offset.text=0.01, extend=0.2, fontsize=2.88) +
+  geom_cladelab(node=antilopini_node, label="", align=TRUE, angle=0, barsize=1.5, barcolour="#b2c5cfff",
+                hjust=0, offset=2, offset.text=0.01, extend=0.2, fontsize=2.88) +
+  geom_cladelab(node=cephalophini_node, label="", align=TRUE, angle=0, barsize=1.5, barcolour="#76a7abff",
+                hjust=0, offset=2, offset.text=0.01, extend=0.2, fontsize=2.88) +
+  geom_cladelab(node=caprini_node, label="", align=TRUE, angle=0, barsize=1.5, barcolour="#c5b0beff",
+                hjust=0, offset=2, offset.text=0.01, extend=0.2, fontsize=2.88)  +
+  coord_flip() +
+  xlim(-45,5)
 
 
 ##########
@@ -230,13 +259,39 @@ ptips <- ggplot(df_tips, aes(x=xpos, y=ypos, label=label)) +
 ptips
 
 
-p0 <- p2 +
-  scale_color_manual(name = "Diet", labels=c("Browsers", "Mixed feeders", "Grazers"),
-                     values=c("#2c6e49", "#adc178", "#7f4f24"))
-legend <- get_legend2(p0 + theme(legend.position = "right",
-                                  legend.box.margin = margin(0, 0, 0, 12))
-                       + guides(color = guide_legend(override.aes = list(linewidth = 2),
-                                                     title='Feeding behavior')))
+#p0 <- p2 +
+#  scale_color_manual(name = "Feeding behavior", labels=c("Browsers", "Mixed feeders", "Grazers"),
+#                     values=c("#2c6e49", "#adc178", "#7f4f24"))
+#legend <- get_legend2(p0 + theme(legend.position = "right",
+#                                  legend.box.margin = margin(0, 0, 0, 12),
+#                                 legend.text = element_text(size=8))
+#                       + guides(color = guide_legend(override.aes = list(linewidth = 2),
+#                                                     title='Feeding behavior')))
+legend <- ggplot() +
+  annotate("text", x = 1, y = -0.0, label = "Browsers", hjust = 0      , size=3.5) +
+  annotate("text", x = 1, y = -0.5, label = "Mixed feeders", hjust = 0, size=3.5  ) +
+  annotate("text", x = 1, y = -1.0, label = "Grazers", hjust = 0, size=3.5    ) +
+  annotate("segment", x = 0.925, y = -0.0, xend = 0.975, color = "#2c6e49", linewidth=2) +
+  annotate("segment", x = 0.925, y = -0.5, xend = 0.975, color = "#adc178", linewidth=2) +
+  annotate("segment", x = 0.925, y = -1.0, xend = 0.975, color = "#7f4f24", linewidth=2) +
+  
+  annotate("text", x = 1, y = -2.0-.25, label = "Cervidae", hjust = 0, size=3.5  ) +
+  annotate("text", x = 1, y = -2.5-.25, label = "Bovidae", hjust = 0, size=3.5  ) +
+  annotate("text", x = 1, y = -3.0-.25, label = "Bovini", hjust = 0, size=3.5    ) +
+  annotate("text", x = 1, y = -3.5-.25, label = "Antilopini", hjust = 0, size=3.5) +
+  annotate("text", x = 1, y = -4.0-.25, label = "Cephalophini", hjust = 0, size=3.5) +
+  annotate("text", x = 1, y = -4.5-.25, label = "Caprini", hjust = 0, size=3.5   ) +
+  annotate("segment", x = 0.925, y = -2.0-0.25, xend = 0.975, color = "#9a9a98ff", linewidth=2) +
+  annotate("segment", x = 0.925, y = -2.5-0.25, xend = 0.975, color = "#494a45ff", linewidth=2) +
+  annotate("segment", x = 0.925, y = -3.0-0.25, xend = 0.975, color = "#f0cf91ff", linewidth=2) +
+  annotate("segment", x = 0.925, y = -3.5-0.25, xend = 0.975, color = "#b2c5cfff", linewidth=2) +
+  annotate("segment", x = 0.925, y = -4.0-0.25, xend = 0.975, color = "#76a7abff", linewidth=2) +
+  annotate("segment", x = 0.925, y = -4.5-0.25, xend = 0.975, color = "#c5b0beff", linewidth=2) +
+  theme_void() +
+  annotate("text", x = 0.905, y = 0.5, label = "Feeding behavior", hjust = 0, size=4.5) +
+  annotate("text", x = 0.905, y = -1.5-0.25, label = "Clade", hjust = 0, size=4.5) +
+  coord_cartesian(xlim=c(0.9,1.25))
+legend
 #############
 # scm+joint #
 #############
@@ -251,7 +306,7 @@ plot_left_lab <-  plot_grid(p0w2, plot_left_lab, rel_widths = c(19,81))
   
 
 plot_left <- plot_grid(plot_left_lab, p1a, p2a,
-                       rel_heights = c(1,6,6),
+                       rel_heights = c(1,6,7),
                        ncol=1, align="r")
 
 plot_left_lab_grey <- plot_grid(p0g) + 
@@ -267,7 +322,7 @@ plot_left <- plot_grid(plot_left_lab_grey, plot_left,
 
 plot_mid <- p0w2
 plot_right <- plot_grid(p0w, p5, p6,
-                        rel_heights = c(1,6,6),
+                        rel_heights = c(1,6,7),
                         ncol=1) +
   draw_plot_label(label=c("(b) Joint inference"),
                   x=0.5,
@@ -282,9 +337,12 @@ plot_right <- plot_grid(p0g, plot_right,
                   y=13.5/14,
                   hjust=.5, vjust=.5, size=12)
 
-plot_maps_scm_joint <- cowplot::plot_grid(plot_left, plot_mid, plot_right, legend,
-                                    rel_widths = c(1/0.9,0.01,1,0.6),
+legend_w_space <- plot_grid(p0w2, legend, p0w2, ncol=1, rel_heights = c(1,3,1))
+plot_maps_scm_joint <- cowplot::plot_grid(plot_left, plot_mid, plot_right, legend_w_space,
+                                    rel_widths = c(1/0.9,0.01,1,0.8),
                                     ncol=4)
+
+plot_maps_scm_joint
 
 
 ggsave("figures/case_study_maps_scm_joint2.pdf", plot_maps_scm_joint, width=6.75, height=5, units="in")
